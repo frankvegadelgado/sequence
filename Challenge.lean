@@ -385,19 +385,20 @@ theorem nat_lt_two_pow (n : ℕ) : n < 2 ^ n := by
 theorem exists_hfun (K : ℕ) : ∃ g : ℕ, K ≤ 2 ^ g := ⟨K, (nat_lt_two_pow K).le⟩
 
 /-- `h(K) = ⌈log₂ K⌉`, the least `g` with `K ≤ 2^g` (equation `eq:beta`). -/
-def hfun (K : ℕ) : ℕ := Nat.find (exists_hfun K)
+noncomputable def hfun (K : ℕ) : ℕ := sInf {g : ℕ | K ≤ 2 ^ g}
 
 /-- `β(K) = K + h(K)` (equation `eq:beta`). -/
-def beta (K : ℕ) : ℕ := K + hfun K
+noncomputable def beta (K : ℕ) : ℕ := K + hfun K
 
-theorem hfun_ge (K : ℕ) : K ≤ 2 ^ hfun K := Nat.find_spec (exists_hfun K)
+theorem hfun_ge (K : ℕ) : K ≤ 2 ^ hfun K :=
+  Nat.sInf_mem (s := {g : ℕ | K ≤ 2 ^ g}) ⟨K, (nat_lt_two_pow K).le⟩
 
 theorem hfun_le {K g : ℕ} (hg : K ≤ 2 ^ g) : hfun K ≤ g :=
-  Nat.find_min' (exists_hfun K) hg
+  Nat.sInf_le (s := {g : ℕ | K ≤ 2 ^ g}) hg
 
 theorem hfun_lt_min {K g : ℕ} (hg : g < hfun K) : 2 ^ g < K := by
-  have := Nat.find_min (exists_hfun K) hg
-  omega
+  have h := Nat.not_mem_of_lt_sInf (s := {g : ℕ | K ≤ 2 ^ g}) hg
+  simpa using h
 
 theorem hfun_mono {K K' : ℕ} (h : K ≤ K') : hfun K ≤ hfun K' :=
   hfun_le (le_trans h (hfun_ge K'))
