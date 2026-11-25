@@ -4,7 +4,7 @@ Lean 4 formalization for *Powers of a Prime in the Image of Summatory Valuation 
 
 ## Main result
 
-Theorem `thm:equiv` of the paper, Lean theorem `equiv_repr`: for `c(n) = ∑_{k=1}^{n} 2^{v_2(k)}` and `a ≥ 0`, there is `n` with `c(n) = 2^a` if and only if `2^(a+3) = ∑_{j ∈ T} j 2^j` for a finite set `T` of positive integers (that is, `2^(a+3)` is a sum of distinct terms of the superincreasing sequence `(j 2^j)_{j ≥ 1}`). The paper does not determine the asymptotic behaviour of `A(x)` asked for by Nicolas; the Lean development covers the elementary statements of the paper and states which results it does not touch.
+Theorem `thm:equiv` of the paper, Lean theorem `equiv_repr`: for `c(n) = ∑_{k=1}^{n} 2^{v_2(k)}` and `a ≥ 0`, there is `n` with `c(n) = 2^a` if and only if `2^(a+3) = ∑_{j ∈ T} j 2^j` for a finite set `T` of positive integers (that is, `2^(a+3)` is a sum of distinct terms of the superincreasing sequence `(j 2^j)_{j ≥ 1}`). The paper does not determine the asymptotic behaviour of `A(x)` asked for by Nicolas. The Lean development proves the statements of the paper listed below, including the recursion on states, the explicit families, the counting bounds, the successful states and the analogue for an arbitrary prime.
 
 ## Repository layout
 
@@ -14,7 +14,7 @@ Theorem `thm:equiv` of the paper, Lean theorem `equiv_repr`: for `c(n) = ∑_{k=
 | `doc/biblio.bib` | The bibliography (BibTeX style `plainurl`). |
 | `doc/formalization.md` | What Lean proves and what it does not. |
 | `formalization.yaml` | Module inventory with status. |
-| `SequenceNicolas/Core.lean` | The formalized statements of the paper. |
+| `SequenceNicolas/*.lean` | The Lean modules, listed in the table below. |
 | `Challenge.lean`, `Solution.lean` | Standalone challenge (imports only Mathlib) and its solution, compared by `lake comparator`. |
 | `comparator.json` | The compared theorems, in the namespace `SequenceNicolas.Public`. |
 | `scripts/` | `check-lean-sources.py`, `verify-comparator.sh`. |
@@ -22,30 +22,48 @@ Theorem `thm:equiv` of the paper, Lean theorem `equiv_repr`: for `c(n) = ∑_{k=
 
 ## Lean theorems
 
-The theorems are in `SequenceNicolas/Core.lean`; `c n` is `∑ k ∈ Icc 1 n, 2 ^ padicValNat 2 k`.
+`c n` is `∑ k ∈ Icc 1 n, 2 ^ padicValNat 2 k`, and `cp p n` is `∑_{k=1}^{n} p^{v_p(k)}`.
 
-| Theorem | Paper |
-| --- | --- |
-| `c_double`, `c_double_succ` | Recurrences `c(2n) = 2c(n) + n` and `c(2n+1) = 2c(n) + n + 1` (Introduction, Related work) |
-| `two_mul_c_pow` | Lemma `lem:cformula`: `c(2^r) = 2^(r-1) (r+2)`, written `2 c(2^r) = 2^r (r+2)` |
-| `c_add_pow` | Proof of Lemma `lem:cformula`: `c(2^m + s) = c(2^m) + c(s)` for `s < 2^m` |
-| `exists_pow_sum`, `two_mul_c_sum` | Formula `eq:cformula`: `2 c(n) = 2n + ∑_{i ∈ B(n)} i 2^i` for `n = ∑_{i ∈ B(n)} 2^i` (stated for every finite set of exponents) |
-| `eight_mul_c` | Proof of Theorem `thm:equiv`: `8 c(n) = ∑_{j ∈ B(n)+2} j 2^j` |
-| `repr_no_one`, `equiv_repr` | Theorem `thm:equiv` |
-| `sum_j_two_pow` | Lemma `lem:sum`: `∑_{j=1}^{J} j 2^j = (J-1) 2^(J+1) + 2`, written without subtraction |
-| `leading_term` | Theorem `thm:leading` (1): the largest element `K` of the representing set satisfies `K ≥ 2` and `b = K + ⌈log₂ K⌉`, with `⌈log₂ K⌉` characterized by `K ≤ 2^g < 2K` |
-| `members_one` | Theorem `thm:members` (1): `c(2^(2^r - 2)) = 2^(2^r + r - 3)`, written `8 c(2^(2^r - 2)) = 2^(2^r + r)` |
-| `members_two`, `members_two_bounds` | Theorem `thm:members` (2): `c(2^(K-2) + 2^(K-s-2)) = 2^(K+h-3)` and `2^(h-1) < K < 2^h`, from `K (2^s + 1) = 2^(h+s) + s` |
+| Paper | Lean modules (`SequenceNicolas.*`) | Lean theorems |
+|---|---|---|
+| Introduction recurrences | Core | `c_double`, `c_double_succ` |
+| `lem:cformula` | Core | `two_mul_c_pow`, `c_add_pow`, `exists_pow_sum`, `two_mul_c_sum` |
+| `thm:equiv` | Core | `eight_mul_c`, `repr_no_one`, `equiv_repr` |
+| `lem:sum` | Core, Recursion | `sum_j_two_pow`, `InE_lt` |
+| `lem:greedy` | Recursion | `repr_unique`, `greedy_iff` |
+| `thm:leading` (1) | Core, Recursion | `leading_term`, `leading_beta` |
+| `thm:leading` (2), (3) and last statement | Recursion | `beta_strictMono`, `beta_range`, `leading_state`, `inE_two_pow_iff`, `amem_gap`, `exists_candidate`, `amem_iff_state` |
+| `thm:step` | Recursion | `exists_S`, `term_le_iff`, `step_main` |
+| `alg:membership`, `cor:algo` | Recursion | `run_sound`, `run_complete`, `int_bound` |
+| `lem:least` | Recursion | `least_char`, `fails_iff`, `least_two`, `least_three` |
+| `thm:members` | Core, Counting | `members_one`, `members_two`, `members_two_bounds`, `M1_spec` |
+| `lem:order` | Families | `order_one`, `order_two`, `order_bounds`, `order_iff` |
+| `thm:nonmembers` | Families | `nonmembers_core`, `nonmem_family_one`, `nonmem_family_two` |
+| `thm:firststep` | Families | `firststep_one`, `onestep_iff`, `firststep_two`, `firststep_three` |
+| `prop:nicolasfamilies` | Families | `nicolas_one`, `nicolas_two_fwd`, `nicolas_two_bwd`, `nicolas_three_fwd`, `nicolas_three_bwd` |
+| `prop:nicolascount` | NicolasCount | `A_lower`, `A_upper`, `A_real`, `P_lower`, `P_upper`, `Q_lower`, `Q_upper`, `PQ_disjoint`, `B_real` |
+| `thm:counting` | CountBase, Counting, CountingA, CountingB, CountingReal | `counting_A`, `counting_B`, `counting_real_A`, `counting_real_B`, `counting_real_asymp_A`, `counting_real_asymp_B` |
+| `prop:Ncount` (1) | Forest | `Ncount` |
+| `prop:symmetry` | States | `succ_symm` |
+| `prop:Npairs` | Forest, Roots | `N_odd_eq`, `four_dvd` |
+| `thm:forest` | Forest, States, Roots | `F_count`, `F_sum`, `phi_iff`, `children_card`, `succ_iff_phi`, `count_children`, `N_identity`, `J_identity`, `initial_fwd` |
+| `prop:roots` | Roots | `phi_repr`, `root_of_repr`, `roots_half` |
+| `thm:bottomup` | States | `bottomup_iff` |
+| `thm:symfamilies` | SymFamilies | `symfam_one`, `symfam_two`, `symfam_three` |
+| `thm:counting2` | CountingC, CountingD, CountingReal | `counting2_A`, `counting2_B`, `counting2_real_A`, `counting2_real_B`, `counting2_real_asymp_A`, `counting2_real_asymp_B` |
+| `lem:cp` | PrimesBase | `cp_mul`, `cp_pow`, `cp_pow_pred`, `cp_digits` |
+| `prop:Fp` | PrimesFp | `prop_Fp`, `prop_Fp_unique` |
+| `thm:primes` | PrimesRep | `rep_unique`, `Ap_iff`, `bp_gap_of`, `unique_candidate`, `not_Ap_gap`, `Ap_cand` |
+| `thm:primestep` | PrimesStep | `primestep_one`, `primestep_two` |
+| `thm:primefamilies` | PrimesFamilies, PrimesCount, PrimesCountReal | `primefam_one`, `primefam_two`, `primefam_three`, `primecount_A`, `primecount_B`, `primecount_real_A`, `primecount_real_B` |
+| `prop:primezero` | PrimesFamilies | `primezero_iff`, `primezero_mem`, `primezero_family` |
+| `thm:immediate` | PrimesImmediate | `imm_range`, `imm_two`, `imm_triple`, `imm_param`, `imm_three`, `imm_count` |
+| `thm:primebottomup` | PrimesBottomUp | `succ_succ_iff`, `succ_pair_inj`, `N_succ_not_dvd`, `N_succ_dvd`, `succ_dvd_iff`, `succ_dvd_inj`, `succ_symm`, `Ap_iff_Sset` |
 
 ## Not formalized in Lean
 
-- Lemma `lem:greedy` and parts (2) and (3) of Theorem `thm:leading`.
-- The recursion on states: Theorem `thm:step`, Corollary `cor:algo`, Lemma `lem:least`.
-- Lemma `lem:order`, the explicit non-members (Theorem `thm:nonmembers`) and Theorem `thm:firststep`, Proposition `prop:nicolasfamilies`.
-- The counting bounds (Theorems `thm:counting` and `thm:counting2`, Proposition `prop:nicolascount`).
-- The successful states, the forest and the bottom-up recursion (Section `sec:states`).
-- The analogue for an arbitrary prime (Section `sec:primes`).
-- The computations of Section `sec:experiments`.
+- Proposition `prop:Ncount` (2).
+- The computations and tables of Section `sec:experiments`.
 
 ## Toolchain
 

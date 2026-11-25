@@ -11,9 +11,7 @@ Elementary statements of the paper: the function `c(n) = ∑_{k ≤ n} 2^{v_2(k)
 question, its recurrences and binary formula (Lemma `lem:cformula`), the reduction of
 `2^a ∈ c(ℕ)` to a sum of distinct terms `j 2^j` (Theorem `thm:equiv`), the sum
 `∑ j 2^j` (Lemma `lem:sum`), the bound on the leading term (Theorem `thm:leading` (1)) and
-the closed formulas of the explicit members (Theorem `thm:members`). The recursion on states,
-the explicit non-members, the counting bounds, the forest of states, the analogue for an
-arbitrary prime and the computations are not formalized.
+the closed formulas of the explicit members (Theorem `thm:members`).
 -/
 
 namespace SequenceNicolas.Core

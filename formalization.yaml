@@ -1,7 +1,7 @@
 version: v0.4
 project:
   name: "SequenceNicolas: powers of a prime in the image of summatory valuation functions"
-  description: "Lean 4 formalization of the elementary statements of the paper 'Powers of a Prime in the Image of Summatory Valuation Functions', on the question of Nicolas about the powers of 2 in the image of c(n) = sum_{k=1}^{n} 2^{v_2(k)}. The compared results are: the recurrences c(2n) = 2c(n) + n and c(2n+1) = 2c(n) + n + 1; the formula c(2^r) = 2^(r-1)(r+2) and the additivity c(2^a + t) = c(2^a) + c(t) for t < 2^a of Lemma lem:cformula; the binary formula 2c(n) = 2n + sum i 2^i over the binary exponents of n (formula eq:cformula) and the identity 8c(n) = sum (i+2) 2^(i+2); Theorem thm:equiv, that 2^a is a value of c if and only if 2^(a+3) is a sum of distinct terms j 2^j with j >= 1, with the fact that 1 is not an index of such a sum; the sum of j 2^j for 1 <= j <= J (Lemma lem:sum); the leading term K of a representing set, K >= 2 and a+3 = K + ceil(log_2 K) (Theorem thm:leading (1)); and the closed formulas of the explicit members of Theorem thm:members, c(2^(2^r-2)) = 2^(2^r+r-3) and c(2^(K-2) + 2^(K-s-2)) = 2^(K+h-3) with 2^(h-1) < K < 2^h. Everything is proved from Mathlib. The recursion on states, the explicit non-members, the counting bounds, the forest of successful states, the analogue for an arbitrary prime and the computations are not formalized."
+  description: "Lean 4 formalization of the paper 'Powers of a Prime in the Image of Summatory Valuation Functions', on the question of Nicolas about the powers of 2 in the image of c(n) = sum_{k=1}^{n} 2^{v_2(k)}. It proves the recurrences and the binary formula for c, the equivalence of Theorem thm:equiv, the greedy lemma, the leading term and the recursion on states with its algorithm, the explicit members and non-members, the one-step classification, the families of Nicolas and their counting, the lower bounds for the counting functions A(x) and B(x) (Theorems thm:counting and thm:counting2), the forest of successful states, the bottom-up recursion and the symmetry, the further families of Theorem thm:symfamilies, and the analogue for an arbitrary prime p (Lemma lem:cp, Proposition prop:Fp, Theorems thm:primes, thm:primestep, thm:primefamilies, thm:immediate, thm:primebottomup and Proposition prop:primezero). Everything is proved from Mathlib. The computations of Section sec:experiments and Proposition prop:Ncount (2) are not formalized."
   authors:
     - name: "Frank Vega"
       orcid: "0000-0001-8210-4126"
@@ -46,20 +46,107 @@ main_result:
   name: equiv_repr
   paper_theorem: thm:equiv
   statement: For a >= 0, 2^a is a value of c(n) = sum_{k=1}^{n} 2^{v_2(k)} if and only if 2^(a+3) = sum_{j in T} j 2^j for a finite set T of positive integers.
-  lean_modules: [SequenceNicolas.Core]
+  lean_modules: [SequenceNicolas.Core, SequenceNicolas.Recursion, SequenceNicolas.Families, SequenceNicolas.States, SequenceNicolas.Forest, SequenceNicolas.Roots, SequenceNicolas.SymFamilies, SequenceNicolas.NicolasCount, SequenceNicolas.CountBase, SequenceNicolas.Counting, SequenceNicolas.CountingA, SequenceNicolas.CountingB, SequenceNicolas.CountingC, SequenceNicolas.CountingD, SequenceNicolas.CountingReal, SequenceNicolas.PrimesBase, SequenceNicolas.PrimesRep, SequenceNicolas.PrimesStep, SequenceNicolas.PrimesFamilies, SequenceNicolas.PrimesImmediate, SequenceNicolas.PrimesBottomUp, SequenceNicolas.PrimesFp, SequenceNicolas.PrimesCount, SequenceNicolas.PrimesCountReal]
   cited_not_formalized: []
 
 modules:
   - name: SequenceNicolas.Core
     path: SequenceNicolas/Core.lean
     status: formalized
-    notes: "The function c n = sum_{k=1}^{n} 2^{v_2(k)} (padicValNat 2); the recurrences c_double and c_double_succ; Lemma lem:cformula (two_mul_c_pow, c_add_pow, exists_pow_sum, two_mul_c_sum); the identity eight_mul_c used in Theorem thm:equiv; Theorem thm:equiv (repr_no_one, equiv_repr); Lemma lem:sum (sum_j_two_pow); Theorem thm:leading (1) (leading_term); Theorem thm:members (members_one, members_two, members_two_bounds)."
+    notes: "The function c n = sum_{k=1}^{n} 2^{v_2(k)} (padicValNat 2); the recurrences; Lemma lem:cformula; Theorem thm:equiv; Lemma lem:sum; Theorem thm:leading (1); Theorem thm:members."
+  - name: SequenceNicolas.Recursion
+    path: SequenceNicolas/Recursion.lean
+    status: formalized
+    notes: "Lemma lem:greedy; the functions hfun and beta; Theorem thm:leading (1), (2), (3) and its last statement; Theorem thm:step; Algorithm alg:membership and Corollary cor:algo; Lemma lem:least."
+  - name: SequenceNicolas.Families
+    path: SequenceNicolas/Families.lean
+    status: formalized
+    notes: "Lemma lem:order; Theorem thm:nonmembers; Theorem thm:firststep; Proposition prop:nicolasfamilies."
+  - name: SequenceNicolas.States
+    path: SequenceNicolas/States.lean
+    status: formalized
+    notes: "Proposition prop:symmetry; Theorem thm:forest (2), (3) without the counting identities, and (4); Theorem thm:bottomup."
+  - name: SequenceNicolas.Forest
+    path: SequenceNicolas/Forest.lean
+    status: formalized
+    notes: "Proposition prop:Ncount (1); N(2k+1) = N(2k) of Proposition prop:Npairs; Theorem thm:forest (1), (2) and the counting identities of (3)."
+  - name: SequenceNicolas.Roots
+    path: SequenceNicolas/Roots.lean
+    status: formalized
+    notes: "4 divides N(J) of Proposition prop:Npairs; the sum of F(J) of Theorem thm:forest (1); Proposition prop:roots."
+  - name: SequenceNicolas.SymFamilies
+    path: SequenceNicolas/SymFamilies.lean
+    status: formalized
+    notes: "Theorem thm:symfamilies (1), (2), (3)."
+  - name: SequenceNicolas.NicolasCount
+    path: SequenceNicolas/NicolasCount.lean
+    status: formalized
+    notes: "Proposition prop:nicolascount."
+  - name: SequenceNicolas.CountBase
+    path: SequenceNicolas/CountBase.lean
+    status: formalized
+    notes: "The constants E, C1, C2 and the series estimates used in Theorems thm:counting and thm:counting2."
+  - name: SequenceNicolas.Counting
+    path: SequenceNicolas/Counting.lean
+    status: formalized
+    notes: "The counting functions A and B for natural arguments and the index sets of the families of Theorems thm:members and thm:nonmembers."
+  - name: SequenceNicolas.CountingA
+    path: SequenceNicolas/CountingA.lean
+    status: formalized
+    notes: "Theorem thm:counting, the bound for A."
+  - name: SequenceNicolas.CountingB
+    path: SequenceNicolas/CountingB.lean
+    status: formalized
+    notes: "Theorem thm:counting, the bound for B."
+  - name: SequenceNicolas.CountingC
+    path: SequenceNicolas/CountingC.lean
+    status: formalized
+    notes: "Theorem thm:counting2, the combinatorial side."
+  - name: SequenceNicolas.CountingD
+    path: SequenceNicolas/CountingD.lean
+    status: formalized
+    notes: "Theorem thm:counting2, the explicit bounds."
+  - name: SequenceNicolas.CountingReal
+    path: SequenceNicolas/CountingReal.lean
+    status: formalized
+    notes: "The bounds of Theorems thm:counting and thm:counting2 for a real argument x >= 16."
+  - name: SequenceNicolas.PrimesBase
+    path: SequenceNicolas/PrimesBase.lean
+    status: formalized
+    notes: "Lemma lem:cp."
+  - name: SequenceNicolas.PrimesRep
+    path: SequenceNicolas/PrimesRep.lean
+    status: formalized
+    notes: "Theorem thm:primes."
+  - name: SequenceNicolas.PrimesStep
+    path: SequenceNicolas/PrimesStep.lean
+    status: formalized
+    notes: "Theorem thm:primestep."
+  - name: SequenceNicolas.PrimesFamilies
+    path: SequenceNicolas/PrimesFamilies.lean
+    status: formalized
+    notes: "Theorem thm:primefamilies (1), (2), (3) and Proposition prop:primezero."
+  - name: SequenceNicolas.PrimesImmediate
+    path: SequenceNicolas/PrimesImmediate.lean
+    status: formalized
+    notes: "Theorem thm:immediate."
+  - name: SequenceNicolas.PrimesBottomUp
+    path: SequenceNicolas/PrimesBottomUp.lean
+    status: formalized
+    notes: "Theorem thm:primebottomup."
+  - name: SequenceNicolas.PrimesFp
+    path: SequenceNicolas/PrimesFp.lean
+    status: formalized
+    notes: "Proposition prop:Fp."
+  - name: SequenceNicolas.PrimesCount
+    path: SequenceNicolas/PrimesCount.lean
+    status: formalized
+    notes: "The counting consequence of Theorem thm:primefamilies for natural arguments."
+  - name: SequenceNicolas.PrimesCountReal
+    path: SequenceNicolas/PrimesCountReal.lean
+    status: formalized
+    notes: "The counting consequence of Theorem thm:primefamilies for a real argument."
 
 unformalized_in_lean:
-  - Lemma lem:greedy and parts (2) and (3) of Theorem thm:leading (the injectivity of beta, the exponents without candidate, the equivalence with membership of 2^K(2^h - K) in E_{K-1})
-  - The recursion on states (Theorem thm:step, Corollary cor:algo, Lemma lem:least) and Algorithm alg:membership
-  - Lemma lem:order, the explicit non-members (Theorem thm:nonmembers), Theorem thm:firststep and Proposition prop:nicolasfamilies
-  - The counting bounds (Theorems thm:counting and thm:counting2, Proposition prop:nicolascount), which use real-analysis estimates
-  - The successful states, the forest and the bottom-up recursion (Propositions prop:Ncount, prop:symmetry, prop:Npairs, prop:roots, Theorems thm:forest, thm:bottomup, thm:symfamilies)
-  - The analogue for an arbitrary prime (Section sec:primes)
-  - The computations of Section sec:experiments (script experiments/powers_of_two_c.py, output experiments/results_powers_of_two_c.txt)
+  - Proposition prop:Ncount (2)
+  - The computations and tables of Section sec:experiments (script experiments/powers_of_two_c.py, output experiments/results_powers_of_two_c.txt)
