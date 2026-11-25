@@ -25,6 +25,10 @@ sources:
     type: manuscript
     relationship: formalizes
     authors: ["Frank Vega"]
+  - title: "Some open questions"
+    type: article
+    relationship: formalizes
+    authors: ["Jean-Louis Nicolas"]
 
 automation:
   methods:
