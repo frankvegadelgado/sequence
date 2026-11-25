@@ -397,8 +397,9 @@ theorem hfun_le {K g : ℕ} (hg : K ≤ 2 ^ g) : hfun K ≤ g :=
   Nat.sInf_le (s := {g : ℕ | K ≤ 2 ^ g}) hg
 
 theorem hfun_lt_min {K g : ℕ} (hg : g < hfun K) : 2 ^ g < K := by
-  have h := Nat.not_mem_of_lt_sInf (s := {g : ℕ | K ≤ 2 ^ g}) hg
-  simpa using h
+  by_contra hc
+  have h1 : hfun K ≤ g := hfun_le (not_lt.1 hc)
+  omega
 
 theorem hfun_mono {K K' : ℕ} (h : K ≤ K') : hfun K ≤ hfun K' :=
   hfun_le (le_trans h (hfun_ge K'))
