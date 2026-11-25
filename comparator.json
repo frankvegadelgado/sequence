@@ -1,0 +1,33 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "SequenceNicolas.Public.c_double",
+    "SequenceNicolas.Public.c_double_succ",
+    "SequenceNicolas.Public.two_mul_c_pow",
+    "SequenceNicolas.Public.c_add_pow",
+    "SequenceNicolas.Public.exists_pow_sum",
+    "SequenceNicolas.Public.two_mul_c_sum",
+    "SequenceNicolas.Public.eight_mul_c",
+    "SequenceNicolas.Public.repr_no_one",
+    "SequenceNicolas.Public.equiv_repr",
+    "SequenceNicolas.Public.sum_j_two_pow",
+    "SequenceNicolas.Public.leading_term",
+    "SequenceNicolas.Public.members_one",
+    "SequenceNicolas.Public.members_two",
+    "SequenceNicolas.Public.members_two_bounds",
+    "SequenceNicolas.Public.hfun_spec",
+    "SequenceNicolas.Public.hfun_of_bounds",
+    "SequenceNicolas.Public.hfun_succ",
+    "SequenceNicolas.Public.beta_strictMono",
+    "SequenceNicolas.Public.beta_two_pow",
+    "SequenceNicolas.Public.beta_two_pow_succ"
+  ],
+  "definition_names": [],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": true
+}

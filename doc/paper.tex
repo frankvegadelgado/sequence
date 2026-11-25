@@ -1,0 +1,1317 @@
+\documentclass[11pt]{amsart}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{url}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{array}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue,hypertexnames=false]{hyperref}
+\makeatletter
+\providecommand{\theHALG@line}{}
+\renewcommand{\theHALG@line}{\thealgorithm.\arabic{ALG@line}}
+\let\OldALG@beginalgorithmic\ALG@beginalgorithmic
+\renewcommand{\ALG@beginalgorithmic}{\OldALG@beginalgorithmic\renewcommand{\baselinestretch}{1.5}\selectfont}
+\makeatother
+
+\newtheorem{Theorem}{Theorem}[section]
+\newtheorem{Proposition}[Theorem]{Proposition}
+\newtheorem{Lemma}[Theorem]{Lemma}
+\newtheorem{Corollary}[Theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{Example}[Theorem]{Example}
+
+\title{Powers of a Prime in the Image of Summatory Valuation Functions}
+
+\author{Frank Vega}
+\address{Information Physics Institute, 840 W 67th St, Hialeah, FL 33012, USA}
+\email{vega.frank@gmail.com}
+\thanks{ORCID: 0000-0001-8210-4126}
+
+\subjclass[2020]{Primary 11A63; Secondary 11A25, 11B83, 11N37}
+\keywords{Arithmetic functions; $2$-adic valuation; Binary expansion; Superincreasing sequences; Polynomials over $\mathbb{F}_2$; Open questions of Nicolas}
+
+\begin{document}
+
+\begin{abstract}
+J.-L. Nicolas asked how often a power of $2$ belongs to the image of $c(n)=\sum_{k\le n}2^{v_2(k)}$, where $v_2$ is the $2$-adic valuation, and showed that the number $A(x)$ of exponents $a\le x$ with $2^a$ in the image and the number $B(x)$ of the other exponents both tend to infinity. We prove that $2^a$ lies in the image of $c$ if and only if $2^{a+3}$ is a sum of distinct terms of the superincreasing sequence $(j2^j)_{j\ge1}$. For every exponent there is at most one possible largest term $K$, given by $K+\lceil\log_2K\rceil=a+3$, and membership is then decided by an explicit recursion on pairs of integers at most $a+3$, in at most $a+1$ steps. The exponents without such a $K$ and the exponents decided in at most one step form explicit infinite families, described completely, which contain the three families of Nicolas. The states of the recursion form a forest and the set of successful states is symmetric; this yields further explicit families and the bounds $A(x)\ge(3.9655\ldots+o(1))\log_2x$ and $B(x)\ge(2.8178\ldots+o(1))\log_2x$, whereas the families of Nicolas give the constants $\frac12$ and $\frac32$. The reduction, the unique candidate, the recursion and the symmetry extend to $c_p(n)=\sum_{k\le n}p^{v_p(k)}$ for every prime $p$. Computations in exact integer arithmetic reproduce the table of Nicolas and give $A(x)$ for $x\le262000$, with $A(x)/x$ between $0.5132$ and $0.8750$ for $x=1000,2000,\dots,262000$. The reduction to sums of distinct terms $j2^j$, the bound on the leading term and the closed formulas for the explicit members are formalized in Lean~4.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+For a positive integer $k$ let $v_2(k)$ denote the exponent of $2$ in $k$. In a joint paper with J.~Dixmier~\cite{dixmiernicolas2002}, J.-L.~Nicolas considered the function
+\begin{equation}
+\label{eq:cdef}
+c(n)=\sum_{k=1}^{n}2^{v_2(k)},\qquad n\ge1,
+\end{equation}
+which is the exponent of $1+X$ in the factorization of $(1+X)(1+X^2)\cdots(1+X^n)$ into irreducible factors over $\mathbb{F}_2[X]$, and in his list of open questions~\cite{nicolas2005open} he asked how often a power of $2$ belongs to the image of $c$. The sequence $(c(n))_{n\ge1}=1,3,4,8,9,11,12,20,\dots$ of the partial sums of the highest power of $2$ dividing $k$ is the sequence M2344 of the encyclopedia of Sloane and Plouffe~\cite{sloaneplouffe1995}. It satisfies the recurrence $c(2n)=2c(n)+n$ and the formulas $c(2^r)=2^{r-1}(r+2)$ and $c(2^r-1)=r2^{r-1}$~\cite{nicolas2005open}, and the recurrence splits at half, a class of recurrences whose identities and periodic oscillations are studied by Hwang, Janson and Tsai~\cite{hwangjansontsai2024}. With
+\begin{equation}
+\label{eq:Adef}
+\mathcal{A}=\{a\ge0:\ 2^a\in c(\mathbb{N})\},\qquad A(x)=\#\{a\in\mathcal{A}:\ a\le x\},\qquad B(x)=\#\{a\in\mathbb{Z}\cap[0,x]:\ a\notin\mathcal{A}\},
+\end{equation}
+Nicolas showed that $A(x)\to\infty$ and $B(x)\to\infty$, and asked whether the behaviour of $A(x)$ can be made precise; his table gives, for instance, the values $635$ for $x=1000$ and $5963$ for $x=10000$~\cite{nicolas2005open}, which are the numbers of exponents $1\le a\le x$ in $\mathcal{A}$, that is $A(x)-1$ in the notation~\eqref{eq:Adef}, since $c(1)=2^0$ (Section~\ref{sec:experiments}). He obtained these limits from three families: $2^a\notin c(\mathbb{N})$ when $a=2^r+r-2$; $a+(2^a-11)/3\in\mathcal{A}$ for odd $a\ge3$; and $a+(2^a-10)/3\notin\mathcal{A}$ for even $a\ge4$~\cite{nicolas2005open}.
+
+The same list contains a question on a family of fractions, namely the size of the largest numerator $A(N)$ of $\prod_{n\le N}((n+1)/n)^{\varepsilon(n)}$ with $\varepsilon(n)\in\{-1,0,1\}$; for that question de la Bret\`eche, Pomerance and Tenenbaum proved $\log A(N)=\{\kappa+o(1)\}N\log N$ with an explicit constant $\kappa\approx0.107005$~\cite{bretechepomerancetenenbaum2005}. The present paper is concerned with the question on $c(n)$ only.
+
+\subsection{Related work}
+\label{subsec:related}
+The sequence $(c(n))_{n\ge1}$ is the entry A006520 of the On-Line Encyclopedia of Integer Sequences~\cite{oeisA006520}, where it is described as the sequence of the partial sums of the highest power of $2$ dividing $k$ and where the formula $c(n)=n+\sum_{k\ge1}2^{k-1}\lfloor n/2^k\rfloor$ is recorded. The relations $c(2n)=2c(n)+n$ and $c(2n+1)=2c(n)+n+1$, the second of which follows from the first because $v_2(2n+1)=0$, show that the $\mathbb{Z}$-module generated by the three sequences $(c(n))_{n\ge0}$, $(n)_{n\ge0}$ and $(1)_{n\ge0}$, with $c(0)=0$, is stable under the substitutions $n\mapsto2n$ and $n\mapsto2n+1$; hence $(c(n))_{n\ge0}$ is a $2$-regular sequence in the sense of Allouche and Shallit~\cite{alloucheshallit1992}. In the same way, for a prime $p$ the function $c_p$ of Section~\ref{sec:primes} satisfies $c_p(pn+r)=p\,c_p(n)+(p-1)n+r$ for $0\le r\le p-1$, by Lemma~\ref{lem:cp}(1) and because the integers $pn+1,\dots,pn+r$ are prime to $p$, so that $(c_p(n))_{n\ge0}$ is a $p$-regular sequence. The identities and the asymptotic oscillations of the solutions of recurrences splitting at half are the subject of~\cite{hwangjansontsai2024}; the question of Nicolas concerns the set of values of $c$. Nicolas~\cite{nicolas2005open} compares $c$ with the summatory function $S(n)=\sum_{k\le n}d(k)$ of the sum $d(k)$ of the binary digits of $k$: one has $S(2^r-1)=c(2^r-1)=r2^{r-1}$, the two functions are not equal, and he refers to the asymptotic study of $S(n)$ by Mellin transforms~\cite{flajoletetal1994}.
+
+A sequence of positive integers is called superincreasing if each term is larger than the sum of all the preceding terms. For such a sequence, an integer has at most one representation as a sum of distinct terms, and the representation, if it exists, is obtained by taking at each step the largest term that does not exceed the remainder; the knapsack scheme of Merkle and Hellman rests on this property~\cite{merklehellman1978}. Lemma~\ref{lem:greedy} is this property for the sequence $(j2^j)_{j\ge1}$. Sections~\ref{sec:leading}--\ref{sec:states} use the special form $j2^j$ of the terms and the special form $2^b$ of the target, for which the greedy procedure becomes the recursion on pairs of small integers of Section~\ref{sec:recursion}.
+
+With respect to the results of Nicolas, the comparison is the following. The three families of Nicolas contain $\frac12\log_2x+O(1)$ exponents $a\le x$ in $\mathcal{A}$ and $\frac32\log_2x+O(1)$ exponents $a\le x$ outside $\mathcal{A}$ (Proposition~\ref{prop:nicolascount}), and the families of the present paper contain at least $(3.9655\ldots+o(1))\log_2x$ exponents $a\le x$ in $\mathcal{A}$ and at least $(2.8178\ldots+o(1))\log_2x$ exponents $a\le x$ outside $\mathcal{A}$ (Theorem~\ref{thm:counting2}). Table~\ref{tab:allfam} gives the numbers of exponents of all these families up to $x=10^3,\dots,10^{12}$, together with the exact values of $A(x)$ and $B(x)$ for $x\le10^5$. Tables~\ref{tab:counting}, \ref{tab:counting65} and~\ref{tab:counting131} give $A(x)$ for $x\le260000$, and the values of Table~\ref{tab:counting} for $x\le10000$ coincide with the table of Nicolas.
+
+\paragraph{Contributions} We prove the following results.
+\begin{itemize}
+\item The identity $c(n)=n+\frac12\sum_{i\in\mathcal{B}(n)}i\,2^{i}$, where $\mathcal{B}(n)$ is the set of positions of the binary digits $1$ of $n$, equivalently $c(n)=n+\sum_{k\ge1}2^{k-1}\lfloor n/2^k\rfloor$, and the equivalence $a\in\mathcal{A}\iff 2^{a+3}=\sum_{j\in T}j\,2^{j}$ for a finite set $T$ of positive integers (Lemma~\ref{lem:cformula}, Theorem~\ref{thm:equiv}).
+\item The numbers $j2^j$ form a superincreasing sequence. Consequently, for every $a\ge0$ there is at most one integer $K\ge2$ that can be the largest element of $T$, namely the solution of $K+\lceil\log_2K\rceil=a+3$, and such a $K$ fails to exist exactly for $a=2^r+r-2$, $r\ge1$ (Theorem~\ref{thm:leading}). This recovers the first family of Nicolas and shows that it is the only obstruction of this kind.
+\item A recursion on pairs of integers bounded by $a+3$ that decides whether $a\in\mathcal{A}$ in at most $a+1$ steps, without handling integers of size $2^a$ (Theorem~\ref{thm:step}, Corollary~\ref{cor:algo}).
+\item Infinite explicit families of members of $\mathcal{A}$, given by the closed formula $c(2^{K-2}+2^{K-s-2})=2^{K+h-3}$ for $s=2^k$, $k\ge0$, $h\equiv k\pmod{2^{k+1}}$ and $K=(2^{h+s}+s)/(2^s+1)$ (Theorem~\ref{thm:members}), and infinite explicit families of non-members, indexed by $s=3$ and by $s=2^i$, $i\ge1$ (Theorem~\ref{thm:nonmembers}). The second and third families of Nicolas are the cases $s=1$ of Theorem~\ref{thm:members} and $s=2$ of Theorem~\ref{thm:nonmembers}. These families are complete in the following sense: they are exactly the exponents that Algorithm~\ref{alg:membership} decides in at most one iteration (Theorem~\ref{thm:firststep}).
+\item Explicit lower bounds for both counting functions (Theorem~\ref{thm:counting}):
+\[
+A(x)\ge(2+o(1))\log_2x,\qquad B(x)\ge\Bigl(\frac54+\frac{E}{2}+o(1)\Bigr)\log_2x,\qquad E=\sum_{i\ge1}\frac{1}{2^i-1}=1.6066951\ldots,
+\]
+so that $\frac54+\frac E2=2.0533475\ldots$.
+\item The states of the recursion form a forest: the roots are the states $(J,0)$, one at each level, and the failing states, whose number up to level $L$ is given by an explicit formula; each state $(J',w')$ has exactly $v_2(J'+1+w')$ children; and the initial states are the states with $J+1+w$ a power of $2$ (Theorem~\ref{thm:forest}). The root of the tree of a successful state is determined by the least element of its representing set, and exactly half of the successful states of each level lie in the tree of the root $(1,0)$ (Proposition~\ref{prop:roots}). The sets $S_J$ satisfy the recursion $S_J=\{c/2:\ c\in S_{J-1}\text{ even}\}\cup\{(c+J)/2:\ c\in S_{J-1}\text{ odd}\}$ for odd $J$ and $S_J=\{c/2,\ c/2+J/2:\ c\in S_{J-1}\text{ even}\}$ for even $J$; in particular $S_J$ is periodic with period $J/2$ for even $J$ (Theorem~\ref{thm:bottomup}). The symmetry yields three further explicit families, among them $c(2^{2^r}-1)=2^{2^r+r-1}$ (Theorem~\ref{thm:symfamilies}), and the improved bounds $A(x)\ge(3.9655\ldots+o(1))\log_2x$ and $B(x)\ge(2.8178\ldots+o(1))\log_2x$ (Theorem~\ref{thm:counting2}). For the sets $S_J$ of successful states, which are the states in the trees of the roots $(J,0)$, the number $N(J)=|S_J|$ counts the sets $T\subseteq\{1,\dots,J\}$ with $\sum_{j\in T}j2^j\equiv0\pmod{2^{J+1}}$, $S_J$ is symmetric under $w\mapsto J-1-w$, $N(2k+1)=N(2k)$, and $4\mid N(J)$ for $J\ge4$ (Section~\ref{sec:states}).
+\item The analogue for every prime $p$ (Section~\ref{sec:primes}), with the complete description of the immediate failures, the bottom-up recursion and the symmetry $w\mapsto(p-1)K-w$ (Theorems~\ref{thm:immediate} and~\ref{thm:primebottomup}): $c_p(n)=\sum_{k\le n}p^{v_p(k)}$ is the exponent of $1-X$ in $(1-X)\cdots(1-X^n)$ over $\mathbb{F}_p[X]$; the reduction to digit sums of the numbers $p^i((p-1)i+p)$, the unique candidate, the exponents $(p^g-1)/(p-1)+g-1$ without candidate, the recursion, and explicit families, among them a family of non-members with no analogue for $p=2$ (Theorems~\ref{thm:primes}, \ref{thm:primestep} and~\ref{thm:primefamilies}). For a general prime, the exponents classified completely are those decided before the first step of the recursion: the exponents without candidate, the exponents accepted without any step (Proposition~\ref{prop:primezero}) and the immediate failures; the classification of the exponents decided in exactly one step (Theorem~\ref{thm:firststep}(2) and~(3)) and the forest of Theorem~\ref{thm:forest} are proved for $p=2$ only. Table~\ref{tab:scope} compares the two cases.
+\item Experiments (Section~\ref{sec:experiments}) with exact integer arithmetic: a verification of the statements above by three independent methods, among them a brute-force search over $n\le2^{24}$; the values of $A(x)$ and $B(x)$ for $x\le20000$, which agree with the table of Nicolas; the sets $S_J$ for $J\le65536$, from which $A(x)$ is obtained for $x\le65000$; the proportion of exponents in $\mathcal{A}$ among the candidates $K\in(2^{h-1},2^h]$ for $h\le16$; and the sets $S_J$ for $J\le262144$ computed with the recursion of Theorem~\ref{thm:bottomup}, from which $A(x)$ is obtained for $x\le262000$.
+\end{itemize}
+
+Section~\ref{subsec:related} places the results in the literature, Section~\ref{sec:reformulation} proves the identity and the equivalence, Section~\ref{sec:leading} treats the largest element of $T$, Section~\ref{sec:recursion} gives the recursion, Sections~\ref{sec:members} and~\ref{sec:nonmembers} give the explicit families, Section~\ref{sec:counting} proves the counting bounds, Section~\ref{sec:states} studies the successful states, Section~\ref{sec:primes} treats an arbitrary prime, Section~\ref{sec:experiments} reports the experiments and Section~\ref{sec:conclusion} concludes.
+
+\paragraph{Logical dependencies} The main results depend on each other as follows. Lemma~\ref{lem:cformula} gives Theorem~\ref{thm:equiv}. Lemmas~\ref{lem:sum} and~\ref{lem:greedy} give Theorem~\ref{thm:leading}. Theorem~\ref{thm:step} follows from Lemmas~\ref{lem:sum} and~\ref{lem:greedy}, and with Theorems~\ref{thm:equiv} and~\ref{thm:leading} it gives Corollary~\ref{cor:algo}; Lemma~\ref{lem:least} is a complement to Theorem~\ref{thm:step}. Theorem~\ref{thm:members} uses only Lemma~\ref{lem:cformula}, and Theorem~\ref{thm:nonmembers} uses Theorem~\ref{thm:step} and Lemma~\ref{lem:least}. Theorem~\ref{thm:firststep} follows from Lemmas~\ref{lem:least} and~\ref{lem:order} and Theorems~\ref{thm:members} and~\ref{thm:nonmembers}, and Proposition~\ref{prop:nicolasfamilies} identifies the families of Nicolas among these. Theorem~\ref{thm:counting} counts the exponents of Theorems~\ref{thm:leading}, \ref{thm:members} and~\ref{thm:nonmembers}. In Section~\ref{sec:states}, Propositions~\ref{prop:Ncount}, \ref{prop:symmetry} and~\ref{prop:Npairs} and Theorem~\ref{thm:bottomup} follow from Lemmas~\ref{lem:sum} and~\ref{lem:greedy}; Theorem~\ref{thm:forest} follows from Theorem~\ref{thm:step} and Lemma~\ref{lem:least}, and Proposition~\ref{prop:roots} from Theorem~\ref{thm:forest} and Proposition~\ref{prop:symmetry}; Theorem~\ref{thm:symfamilies} follows from Theorem~\ref{thm:forest} and Proposition~\ref{prop:symmetry}, and Theorem~\ref{thm:counting2} from Theorems~\ref{thm:counting} and~\ref{thm:symfamilies}. Section~\ref{sec:primes} is independent of Sections~\ref{sec:leading}--\ref{sec:states}: Lemma~\ref{lem:cp} gives Theorem~\ref{thm:primes}, which gives Theorems~\ref{thm:primestep} and~\ref{thm:primebottomup}; Theorems~\ref{thm:primefamilies} and~\ref{thm:immediate} and Proposition~\ref{prop:primezero} follow from Theorems~\ref{thm:primes} and~\ref{thm:primestep}.
+
+\paragraph{Notation} $\mathbb{N}=\{1,2,3,\dots\}$. For $n\ge1$, $\mathcal{B}(n)\subset\{0,1,2,\dots\}$ is the set of positions of the digits $1$ in the binary expansion of $n$, so that $n=\sum_{i\in\mathcal{B}(n)}2^i$. For $J\ge0$ we put
+\begin{equation}
+\label{eq:EJ}
+\mathcal{E}_J=\Bigl\{\sum_{j\in T}j\,2^{j}:\ T\subseteq\{1,\dots,J\}\Bigr\},\qquad \mathcal{E}=\bigcup_{J\ge0}\mathcal{E}_J,
+\end{equation}
+with $\mathcal{E}_0=\{0\}$ (empty sum). Thus $\mathcal{E}_J$ and $\mathcal{E}$ are sets of nonnegative integers, namely the values of the sums, and not sets of index sets; and $\mathcal{E}_0\subseteq\mathcal{E}_1\subseteq\mathcal{E}_2\subseteq\cdots$. We say that a finite set $T$ of positive integers \emph{represents} the integer $V$ if $\sum_{j\in T}j\,2^{j}=V$. Hence $V\in\mathcal{E}_J$ means that $V$ is represented by some $T\subseteq\{1,\dots,J\}$, and $V\in\mathcal{E}$ means that $V$ is represented by some finite set $T$ of positive integers. By Lemma~\ref{lem:greedy}, the set representing a given integer is unique, so that $T\mapsto\sum_{j\in T}j\,2^{j}$ is a bijection from the set of the subsets of $\{1,\dots,J\}$ onto $\mathcal{E}_J$; we call this $T$ \emph{the} set representing $V$. The index sets are always denoted by $T$ or $U$, and the integers they represent by $V$. The counting function $A(x)$ of~\eqref{eq:Adef} includes the exponent $a=0$, because $c(1)=2^0$; the values of the table of Nicolas~\cite{nicolas2005open} are the numbers $A(x)-1$ of exponents $1\le a\le x$ in $\mathcal{A}$. Table~\ref{tab:notation} lists the notation of the paper.
+
+As an illustration of the notation, take $a=5$. We have $2^{a+3}=256=5\cdot2^5+4\cdot2^4+3\cdot2^3+2\cdot2^2$, so the set $T=\{2,3,4,5\}$ represents $2^8$, and $2^8\in\mathcal{E}_5\subseteq\mathcal{E}$. The largest element of $T$ is $K=5$, with $h(K)=3$ and $\beta(K)=8=a+3$, so $K$ is the candidate of $a$, and the initial state of $a$ is $(K-1,2^{h(K)}-K)=(4,3)$. The integer $n=\sum_{j\in T}2^{j-2}=15$ satisfies $c(15)=32=2^5$, so $5\in\mathcal{A}$ (Theorem~\ref{thm:equiv} and Example~\ref{ex:algo}).
+
+\begin{table}[H]
+\centering
+\caption{Notation.}
+\label{tab:notation}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning}\\
+\midrule
+$v_p(k)$ & Exponent of the prime $p$ in the integer $k\ge1$.\\
+$c(n)$, $c_p(n)$ & $\sum_{k\le n}2^{v_2(k)}$ and $\sum_{k\le n}p^{v_p(k)}$\\
+& (Equation~\eqref{eq:cdef}, Section~\ref{sec:primes}).\\
+$\mathcal{A}$, $A(x)$, $B(x)$ & Set of exponents $a\ge0$ with $2^a\in c(\mathbb{N})$,\\
+& and counting functions~\eqref{eq:Adef}.\\
+$\mathcal{B}(n)$ & Set of positions of the binary digits $1$ of $n$.\\
+$\mathcal{E}_J$, $\mathcal{E}$ & Sets of integers $\sum_{j\in T}j2^j$ with $T\subseteq\{1,\dots,J\}$,\\
+& and their union~\eqref{eq:EJ}.\\
+$T$ represents $V$ & $\sum_{j\in T}j2^j=V$.\\
+$h(K)$, $\beta(K)$ & $\lceil\log_2K\rceil$ and $K+h(K)$~\eqref{eq:beta}.\\
+Candidate $K$ of $a$ & Integer $K\ge2$ with $\beta(K)=a+3$, if it exists\\
+& (Theorem~\ref{thm:leading}).\\
+State $(J,w)$ & Pair of integers with $J\ge1$ and $0\le w\le J-1$;\\
+& successful if $2^{J+1}w\in\mathcal{E}_J$ (Section~\ref{sec:recursion}).\\
+Initial state of $a$ & State $(K-1,2^{h(K)}-K)$, where $K$ is the candidate of $a$.\\
+$s$ & Least integer $\sigma\ge1$ with $2^\sigma w+\sigma\ge J+1$,\\
+& for a state $(J,w)$ with $w\ge1$ (Theorem~\ref{thm:step}).\\
+Failing state & State $(J,w)$ with $w\ge1$ and $2^{s-1}w+s=J+1$\\
+& (Theorem~\ref{thm:step}).\\
+$\Phi(J,w)$ & State $(J-s,2^sw+s-J-1)$, for a state $(J,w)$\\
+& with $w\ge1$ that does not fail (Section~\ref{sec:states}).\\
+$S_J$, $N(J)$, $F(J)$ & Set and number of successful states $(J,w)$,\\
+& and number of failing states $(J,w)$ (Section~\ref{sec:states}).\\
+$\mathcal{A}_p$, $A_p(x)$, $B_p(x)$ & Analogues of $\mathcal{A}$, $A(x)$, $B(x)$ for $c_p$\\
+& (Section~\ref{sec:primes}).\\
+$t_i$, $\mathcal{E}^{(p)}_K$ & $t_i=p^i((p-1)i+p)$, and set of sums\\
+& $\sum_{0\le i<K}d_it_i$ with $0\le d_i\le p-1$.\\
+$g(K)$, $u_K$ & Least integer $g\ge1$ with $p^g\ge(p-1)(K+1)+1$,\\
+& and $(p-1)K+p$.\\
+$p$-state $(K,w)$ & Pair of integers with $K\ge0$ and $0\le w\le(p-1)K$;\\
+& successful if $p^Kw\in\mathcal{E}^{(p)}_K$.\\
+$S^{(p)}_K$, $N_p(K)$ & Set and number of successful $p$-states $(K,w)$.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The function $c(n)$ and sums of $j2^j$}
+\label{sec:reformulation}
+\begin{Lemma}
+\label{lem:cformula}
+For every $r\ge0$, $c(2^r)=2^{r-1}(r+2)$, and for every $n\ge1$,
+\begin{equation}
+\label{eq:cformula}
+c(n)=\sum_{i\in\mathcal{B}(n)}2^{i-1}(i+2)=n+\frac12\sum_{i\in\mathcal{B}(n)}i\,2^{i}.
+\end{equation}
+\end{Lemma}
+\begin{proof}
+For $r\ge0$, the number of $k\in[1,2^r-1]$ with $v_2(k)=v$ is $2^{r-1-v}$ for $0\le v\le r-1$, so $c(2^r-1)=\sum_{v=0}^{r-1}2^v2^{r-1-v}=r2^{r-1}$ and $c(2^r)=r2^{r-1}+2^r=2^{r-1}(r+2)$. If $m\ge0$ and $1\le s<2^m$, then $v_2(2^m+k)=v_2(k)$ for $1\le k\le s$, hence $c(2^m+s)=c(2^m)+c(s)$. Writing $n=2^{n_1}+\dots+2^{n_t}$ with $n_1>\dots>n_t$ and applying this relation $t-1$ times gives $c(n)=\sum_{l=1}^{t}c(2^{n_l})=\sum_{i\in\mathcal{B}(n)}2^{i-1}(i+2)$. Finally $2^{i-1}(i+2)=\frac12 i2^i+2^i$ and $\sum_{i\in\mathcal{B}(n)}2^i=n$.
+\end{proof}
+
+The first equality of~\eqref{eq:cformula} is formula (7.4) of~\cite{nicolas2005open}. The second form is equivalent to $c(n)=n+\sum_{k\ge1}2^{k-1}\lfloor n/2^k\rfloor$: since $\lfloor n/2^k\rfloor=\sum_{i\in\mathcal{B}(n),\,i\ge k}2^{i-k}$,
+\[
+\sum_{k\ge1}2^{k-1}\Bigl\lfloor\frac{n}{2^k}\Bigr\rfloor=\sum_{i\in\mathcal{B}(n)}\sum_{k=1}^{i}2^{k-1}2^{i-k}=\sum_{i\in\mathcal{B}(n)}i\,2^{i-1}.
+\]
+The binary form $\frac12\sum_{i\in\mathcal{B}(n)}i2^i$ is the one used below.
+
+\begin{Theorem}
+\label{thm:equiv}
+Let $a\ge0$. Then $a\in\mathcal{A}$ if and only if $2^{a+3}\in\mathcal{E}$. More precisely, if $T$ is a finite set of positive integers with $\sum_{j\in T}j2^j=2^{a+3}$, then $1\notin T$, and $n=\sum_{j\in T}2^{j-2}$ satisfies $c(n)=2^a$; conversely, if $c(n)=2^a$, then $T=\mathcal{B}(n)+2$ satisfies $\sum_{j\in T}j2^j=2^{a+3}$.
+\end{Theorem}
+\begin{proof}
+By~\eqref{eq:cformula}, $8c(n)=\sum_{i\in\mathcal{B}(n)}(i+2)2^{i+2}=\sum_{j\in\mathcal{B}(n)+2}j2^j$, which gives the converse part. For the direct part, every $j\ge2$ gives $j2^j\equiv0\pmod8$, while $1\cdot2^1=2$; since $2^{a+3}\equiv0\pmod 8$, $1\notin T$. As $2^{a+3}>0$, $T\neq\emptyset$, so $n=\sum_{j\in T}2^{j-2}$ is a positive integer with $\mathcal{B}(n)=T-2$, and $8c(n)=\sum_{j\in T}j2^j=2^{a+3}$.
+\end{proof}
+
+\section{The largest element of $T$}
+\label{sec:leading}
+\begin{Lemma}
+\label{lem:sum}
+For every $J\ge0$, $\sum_{j=1}^{J}j2^j=(J-1)2^{J+1}+2$. In particular $\max\mathcal{E}_J=(J-1)2^{J+1}+2<(J+1)2^{J+1}$.
+\end{Lemma}
+\begin{proof}
+The identity holds for $J=0$, and if it holds for $J$, then $(J-1)2^{J+1}+2+(J+1)2^{J+1}=J2^{J+2}+2$. The inequality is $2<2^{J+2}$.
+\end{proof}
+
+\begin{Lemma}
+\label{lem:greedy}
+Let $J\ge1$ and $V\in\mathcal{E}_J$ with $V>0$, and let $T\subseteq\{1,\dots,J\}$ with $\sum_{i\in T}i2^i=V$. Then $\max T$ is the largest $j\in\{1,\dots,J\}$ with $j2^j\le V$, and $T$ is unique. Consequently, if $V>0$ and $j$ is the largest element of $\{1,\dots,J\}$ with $j2^j\le V$, then $V\in\mathcal{E}_J$ if and only if $V-j2^j\in\mathcal{E}_{j-1}$.
+\end{Lemma}
+\begin{proof}
+Let $m=\max T$, so $m2^m\le V$. If some $j$ with $m<j\le J$ satisfied $j2^j\le V$, Lemma~\ref{lem:sum} would give $V\le\sum_{i=1}^{m}i2^i<(m+1)2^{m+1}\le j2^j\le V$, a contradiction. Hence $m$ is determined by $V$, and uniqueness of $T$ follows by induction on $|T|$ applied to $V-m2^m\in\mathcal{E}_{m-1}$. For the last statement, if $V\in\mathcal{E}_J$ the representing set has largest element $j$, so $V-j2^j\in\mathcal{E}_{j-1}$; conversely, adding $j$ to a set representing $V-j2^j$ in $\mathcal{E}_{j-1}$ represents $V$ in $\mathcal{E}_J$.
+\end{proof}
+
+For $K\ge2$ put
+\begin{equation}
+\label{eq:beta}
+h(K)=\lceil\log_2K\rceil,\qquad \beta(K)=K+h(K).
+\end{equation}
+
+\begin{Theorem}
+\label{thm:leading}
+Let $b\ge3$.
+\begin{enumerate}
+\item If $2^b\in\mathcal{E}$ and $T$ is the set representing $2^b$, then $K=\max T$ satisfies $K\ge2$ and $\beta(K)=b$.
+\item The map $\beta$ is strictly increasing on $\{2,3,\dots\}$, and $\{b\ge3\}\setminus\beta(\{2,3,\dots\})=\{2^r+r+1:\ r\ge1\}$.
+\item If $b=\beta(K)$ and $h=h(K)$, then $0\le2^h-K\le K-2$, and $2^b\in\mathcal{E}$ if and only if $2^K(2^h-K)\in\mathcal{E}_{K-1}$.
+\end{enumerate}
+In particular, for $a\ge0$: if $a=2^r+r-2$ with $r\ge1$, then $a\notin\mathcal{A}$; otherwise there is exactly one $K\ge2$ with $\beta(K)=a+3$, and $a\in\mathcal{A}$ if and only if $2^K(2^{h(K)}-K)\in\mathcal{E}_{K-1}$.
+\end{Theorem}
+\begin{proof}
+(1) Since $K=\max T$, we have $K\in T\subseteq\{1,\dots,K\}$. The term $K2^K$ is one of the terms of the sum $\sum_{j\in T}j2^j=2^b$, and all the terms are positive, so $2^b\ge K2^K$. On the other hand the sum over $T$ is at most the sum over all of $\{1,\dots,K\}$, which equals $(K-1)2^{K+1}+2$ by Lemma~\ref{lem:sum} with $J=K$. Hence
+\[
+K2^K\le2^b\le(K-1)2^{K+1}+2.
+\]
+If $K=1$ this reads $2\le2^b\le2$, so $b=1$, contradicting $b\ge3$; so $K\ge2$. Put $g=b-K$ and divide the two inequalities by $2^K$:
+\[
+K\le2^g\le2K-2+2^{1-K}.
+\]
+The left inequality gives $2^g\ge K\ge2$, so $g\ge1$ and $2^g$ is an integer. Since $0<2^{1-K}<1$ and $2^g$ and $2K-2$ are integers, the right inequality gives $2^g\le2K-2<2K$. Thus $2^{g-1}<K\le2^g$, that is $g=\lceil\log_2K\rceil=h(K)$ and $b=K+g=\beta(K)$.
+
+(2) $\beta(K+1)-\beta(K)=1+\lceil\log_2(K+1)\rceil-\lceil\log_2K\rceil$, and $\lceil\log_2(K+1)\rceil>\lceil\log_2K\rceil$ exactly when $K$ is a power of $2$, in which case the difference of the ceilings is $1$. Hence $\beta$ increases by $1$ at each step except from $K=2^r$ to $K=2^r+1$, where $\beta(2^r)=2^r+r$ and $\beta(2^r+1)=2^r+r+2$; since $\beta(2)=3$, the values $b\ge3$ not taken are exactly $2^r+r+1$, $r\ge1$.
+
+(3) Since $2^{h-1}<K\le2^h$, we have $K\ge2^{h-1}+1$, so $2^h\le2K-2$, which gives $0\le2^h-K\le K-2$. If $2^b\in\mathcal{E}$, part (1) and part (2) show that the largest element of the representing set is $K$, and Lemma~\ref{lem:greedy} gives $2^b-K2^K=2^K(2^h-K)\in\mathcal{E}_{K-1}$. Conversely, if $2^K(2^h-K)\in\mathcal{E}_{K-1}$, adding $K$ to the representing set represents $2^b$.
+
+The final statement follows from Theorem~\ref{thm:equiv} with $b=a+3$.
+\end{proof}
+
+The exponents $a=2^r+r-2$ are those of the first family of Nicolas~\cite{nicolas2005open}. Theorem~\ref{thm:leading} shows that every other $a$ has exactly one candidate leading term, and that the candidates $K$ for $a\le x$ are the integers $2\le K\le K_{\max}(x)$, where $K_{\max}(x)$ is the largest $K$ with $\beta(K)\le x+3$.
+
+\section{A recursion on small integers}
+\label{sec:recursion}
+By Theorem~\ref{thm:leading}(3), the membership of $a$ in $\mathcal{A}$ is the question whether $2^{J+1}w\in\mathcal{E}_J$ for the pair $(J,w)=(K-1,2^h-K)$, which satisfies $J\ge1$ and $0\le w\le J-1$. We call such a pair a \emph{state}, and we call it \emph{successful} if $2^{J+1}w\in\mathcal{E}_J$.
+
+\begin{Theorem}
+\label{thm:step}
+Let $(J,w)$ be a state, that is $J\ge1$ and $0\le w\le J-1$.
+\begin{enumerate}
+\item If $w=0$, the state is successful.
+\item If $w\ge1$, then $J\ge2$; let $s$ be the least integer $\sigma\ge1$ with $2^\sigma w+\sigma\ge J+1$. Then $1\le s\le J-1$, and:
+\begin{enumerate}
+\item if $2^{s-1}w+s=J+1$, the state is not successful;
+\item otherwise $w'=2^sw+s-J-1$ satisfies $0\le w'\le J-s-1$, the pair $(J-s,w')$ is a state, and $(J,w)$ is successful if and only if $(J-s,w')$ is successful.
+\end{enumerate}
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) $0\in\mathcal{E}_J$. (2) Since $1\le w\le J-1$, $J\ge2$. For $\sigma=J-1$ we have $2^{J-1}w+J-1\ge2+J-1=J+1$, so $s$ exists and $s\le J-1$. Put $V=2^{J+1}w>0$ and $j=J+1-s$, so $2\le j\le J$. For $\sigma\in\{1,\dots,J\}$ and $i=J+1-\sigma$, the inequality $i2^i\le V$ is equivalent to $J+1-\sigma\le2^\sigma w$; hence the largest $i\le J$ with $i2^i\le V$ corresponds to the least admissible $\sigma$, that is $i=j$. By Lemma~\ref{lem:greedy}, $V\in\mathcal{E}_J$ if and only if $V-j2^j=2^j(2^sw-j)=2^jw'\in\mathcal{E}_{j-1}$, where $w'=2^sw-j=2^sw+s-J-1\ge0$.
+
+We bound $w'$ from above. If $s=1$, then $w'=2w-J\le J-2=j-2$. If $s\ge2$, the minimality of $s$ gives $2^{s-1}w+s-1\le J$, hence $2^sw\le2J+2-2s$ and $w'\le J+1-s=j$. Moreover $w'=j-1$ would mean $2^sw=2j-1$, which is impossible because $2^sw$ is even. Therefore either $w'\le j-2$ or $w'=j$, and $w'=j$ is equivalent to $2^sw=2j$, that is $2^{s-1}w+s=J+1$ (which cannot occur for $s=1$ since $w\le J-1$).
+
+In case (a), $w'=j$ and $2^jw'=j2^j>(j-2)2^j+2=\max\mathcal{E}_{j-1}$ by Lemma~\ref{lem:sum}, since $2^{j+1}>2$; hence $V\notin\mathcal{E}_J$. In case (b), $w'\le j-2=(J-s)-1$ and $J-s=j-1\ge1$, so $(J-s,w')$ is a state, and $2^jw'=2^{(J-s)+1}w'$, so $V\in\mathcal{E}_J$ if and only if $(J-s,w')$ is successful.
+\end{proof}
+
+\begin{algorithm}[H]
+\caption{Membership of $a$ in $\mathcal{A}$}
+\label{alg:membership}
+\begin{algorithmic}[1]
+\Require an integer $a\ge0$
+\State $b\gets a+3$
+\If{there is no $K\ge2$ with $K+\lceil\log_2K\rceil=b$}
+\State \Return $a\notin\mathcal{A}$
+\EndIf
+\State $h\gets\lceil\log_2K\rceil$; $J\gets K-1$; $w\gets2^h-K$
+\While{$w\ge1$}
+\State $s\gets$ least $\sigma\ge1$ with $2^\sigma w+\sigma\ge J+1$
+\If{$2^{s-1}w+s=J+1$}
+\State \Return $a\notin\mathcal{A}$
+\EndIf
+\State $w\gets2^sw+s-J-1$; $J\gets J-s$
+\EndWhile
+\State \Return $a\in\mathcal{A}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{Corollary}
+\label{cor:algo}
+Algorithm~\ref{alg:membership} decides whether $a\in\mathcal{A}$. It performs at most $K-2\le a+1$ iterations of the loop, and every integer it handles, other than the bound $2^h\le2K-2$ of the initial step, is at most $2K\le2a+6$. When it returns $a\in\mathcal{A}$, the indices $j=J+1-s$ produced at the successive iterations, together with $K$, form the set $T$ of Theorem~\ref{thm:equiv}, and $n=\sum_{j\in T}2^{j-2}$ satisfies $c(n)=2^a$.
+\end{Corollary}
+\begin{proof}
+Correctness follows from Theorems~\ref{thm:leading} and~\ref{thm:step}. Each iteration decreases $J$ by $s\ge1$ and keeps $J\ge1$, starting from $J=K-1$, so there are at most $K-2$ iterations; $K\le\beta(K)-1=a+2$. Throughout, $0\le w\le J-1\le K-2$, and in the computation of $s$ only $\sigma\le s$ are tested, with $2^{\sigma}w+\sigma\le2^sw+s\le2J+2-s\le2K$ for $s\ge2$ by the proof of Theorem~\ref{thm:step}, and $2w+1\le2K$ for $s=1$. The last statement follows from the proof of Theorem~\ref{thm:step} and Lemma~\ref{lem:greedy}.
+\end{proof}
+
+\begin{Example}
+\label{ex:algo}
+For $a=5$, $b=8=\beta(5)$, $h=3$ and the initial state is $(4,3)$. The loop gives $s=1$ and $(3,2)$, then $s=1$ and $(2,1)$, then $s=1$ and $(1,0)$, so $5\in\mathcal{A}$ with $T=\{5,4,3,2\}$ and $n=2^3+2^2+2+1=15$; indeed $c(15)=32$~\cite{nicolas2005open}. For $a=6$, $b=9=\beta(6)$, $h=3$ and the initial state is $(5,2)$; here $s=2$ and $2^{1}\cdot2+2=6=J+1$, so $6\notin\mathcal{A}$.
+\end{Example}
+
+The following lemma isolates the monotonicity and minimality properties of the integer $s$ of Theorem~\ref{thm:step} that are used in Sections~\ref{sec:nonmembers} and~\ref{sec:states}. We say that a state $(J,w)$ with $w\ge1$ \emph{fails} if case (2a) of Theorem~\ref{thm:step} holds, that is if $2^{s-1}w+s=J+1$.
+
+\begin{Lemma}
+\label{lem:least}
+Let $(J,w)$ be a state with $w\ge1$, put $f(\sigma)=2^\sigma w+\sigma$ for every integer $\sigma\ge0$, and let $s$ be the least integer $\sigma\ge1$ with $f(\sigma)\ge J+1$, as in Theorem~\ref{thm:step}.
+\begin{enumerate}
+\item The function $f$ is strictly increasing and $f(0)\le J-1$. Consequently an integer $\sigma\ge1$ is equal to $s$ if and only if $f(\sigma-1)\le J$ and $f(\sigma)\ge J+1$.
+\item If $\sigma\ge1$ and $2^{\sigma}w+\sigma=J+1$, then $s=\sigma$, the state $(J,w)$ does not fail, and the state $(J-s,w')$ of Theorem~\ref{thm:step}(2b) is $(J-\sigma,0)$. Conversely, if $(J,w)$ does not fail and $w'=0$, then $2^sw+s=J+1$.
+\item If $\sigma\ge2$ and $2^{\sigma-1}w+\sigma=J+1$, then $s=\sigma$ and the state $(J,w)$ fails. Conversely, if $(J,w)$ fails, then $s\ge2$ and $2^{s-1}w+s=J+1$.
+\end{enumerate}
+In particular, $(J,w)$ fails if and only if $2^{\sigma-1}w+\sigma=J+1$ for some integer $\sigma\ge2$, and $(J,w)$ reaches a state $(J',0)$ in one step of the recursion if and only if $2^{\sigma}w+\sigma=J+1$ for some integer $\sigma\ge1$; in both cases $\sigma$ is unique and equal to $s$.
+\end{Lemma}
+\begin{proof}
+(1) For $\sigma\ge0$, $f(\sigma+1)-f(\sigma)=2^\sigma w+1>0$, and $f(0)=w\le J-1$. By definition, $\sigma\ge1$ equals $s$ if and only if $f(\sigma)\ge J+1$ and $f(\tau)\le J$ for all $1\le\tau<\sigma$; since $f$ is increasing and $f(0)\le J$, the second condition is $f(\sigma-1)\le J$.
+
+(2) We have $f(\sigma)=J+1$ and $f(\sigma-1)<f(\sigma)=J+1$, so $s=\sigma$ by (1). Then $2^{s-1}w+s=J+1-2^{s-1}w<J+1$ because $w\ge1$, so the state does not fail, and $w'=2^sw+s-J-1=0$. The converse is the definition of $w'$.
+
+(3) We have $f(\sigma-1)=2^{\sigma-1}w+\sigma-1=J$ and $f(\sigma)=2(J+1-\sigma)+\sigma=2J+2-\sigma$, which is at least $J+1$ because $J+1=2^{\sigma-1}w+\sigma>\sigma$. So $s=\sigma$ by (1), and $2^{s-1}w+s=J+1$ is the condition of case (2a). Conversely, if $(J,w)$ fails, then $2^{s-1}w+s=J+1$, and $s=1$ would give $w=J$, contradicting $w\le J-1$; so $s\ge2$.
+
+The last statement follows from (2) and (3); the uniqueness of $\sigma$ holds because $\sigma=s$ in both cases.
+\end{proof}
+
+\section{Explicit members of $\mathcal{A}$}
+\label{sec:members}
+\begin{Theorem}
+\label{thm:members}
+\begin{enumerate}
+\item For every $r\ge1$, $c\bigl(2^{2^r-2}\bigr)=2^{2^r+r-3}$; thus $2^r+r-3\in\mathcal{A}$.
+\item Let $k\ge0$, $s=2^k$, and let $h\ge k+2$ with $h\equiv k\pmod{2^{k+1}}$. Then
+\begin{equation}
+\label{eq:Kmember}
+K=\frac{2^{h+s}+s}{2^s+1}
+\end{equation}
+is an integer with $2^{h-1}<K<2^h$ and $K-s\ge2$, and
+\begin{equation}
+\label{eq:member}
+c\bigl(2^{K-2}+2^{K-s-2}\bigr)=2^{K+h-3};
+\end{equation}
+thus $K+h-3=\beta(K)-3\in\mathcal{A}$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) By Lemma~\ref{lem:cformula} with $m=2^r-2$, $c(2^m)=2^{m-1}(m+2)=2^{2^r-3}2^r$.
+
+(2) Modulo $2^s+1$ we have $2^s\equiv-1$, hence $2^{2s}\equiv1$. Writing $h=k+2sq$ with $q\ge0$ we get $2^h\equiv2^k=s$, and therefore $2^{h+s}+s\equiv-2^h+s\equiv0\pmod{2^s+1}$, so $K$ is an integer. Next, $K=2^h-(2^h-s)/(2^s+1)$. Since $s=2^k<2^h$, $K<2^h$; since $2^s+1\ge3$, $(2^h-s)/(2^s+1)<2^{h-1}$, so $K>2^{h-1}$. As $h\ge k+2$, $s\le2^{h-2}$ and $K-s\ge2^{h-1}+1-2^{h-2}\ge2$. By Lemma~\ref{lem:cformula}, with $K-2>K-s-2\ge0$,
+\[
+c\bigl(2^{K-2}+2^{K-s-2}\bigr)=2^{K-3}K+2^{K-s-3}(K-s)=2^{K-s-3}\bigl(K(2^s+1)-s\bigr)=2^{K-s-3}2^{h+s}=2^{K+h-3}.
+\]
+Since $2^{h-1}<K<2^h$, $h=h(K)$ and $K+h=\beta(K)$.
+\end{proof}
+
+For $k=0$ ($s=1$) the condition is that $h\ge2$ is even, $K=(2^{h+1}+1)/3$, and the exponent is $K+h-3=(h+1)+(2^{h+1}-11)/3$; with $a=h+1$ this is the family $a+(2^a-11)/3$, $a$ odd, of Nicolas~\cite{nicolas2005open}. For $k=1$ ($s=2$), $h\equiv1\pmod4$; for instance $h=5$ gives $K=26$ and $c(2^{24}+2^{22})=2^{28}$.
+
+The proof of Theorem~\ref{thm:members}(2) uses the residues of the powers of $2$ modulo $2^s+1$. The following lemma describes them completely; it is used in Section~\ref{sec:nonmembers}.
+
+\begin{Lemma}
+\label{lem:order}
+Let $m\ge1$ and $N=2^m+1$.
+\begin{enumerate}
+\item Let $e\ge0$, and write $e=2mq+l$ or $e=2mq+m+l$ with integers $q\ge0$ and $0\le l\le m-1$. Then $2^e\equiv2^l\pmod N$ in the first case and $2^e\equiv N-2^l\pmod N$ in the second case.
+\item The $2m$ integers $2^l$ and $N-2^l$, $0\le l\le m-1$, are distinct and belong to $\{1,\dots,N-1\}$.
+\item Let $t$ be an integer with $1\le t\le N-1$ and let $e\ge0$. Then $2^e\equiv t\pmod N$ if and only if, for some $0\le l\le m-1$, either $t=2^l$ and $e\equiv l\pmod{2m}$, or $t=N-2^l$ and $e\equiv m+l\pmod{2m}$.
+\end{enumerate}
+\end{Lemma}
+\begin{proof}
+(1) Since $2^m\equiv-1\pmod N$, $2^{2m}\equiv1\pmod N$, so $2^{2mq+l}\equiv2^l$ and $2^{2mq+m+l}\equiv-2^l\equiv N-2^l\pmod N$. (2) For $0\le l\le m-1$, $1\le2^l\le2^{m-1}$ and $2^{m-1}+1\le N-2^l\le2^m=N-1$; the integers $2^l$ are distinct, the integers $N-2^l$ are distinct, and every integer of the first kind is smaller than every integer of the second kind. (3) Every $e\ge0$ has exactly one of the two forms of (1), according to the residue of $e$ modulo $2m$. By (1), the residue of $2^e$ in $\{1,\dots,N-1\}$ is $2^l$ or $N-2^l$, and by (2) this residue determines the form and the integer $l$.
+\end{proof}
+
+\section{Explicit non-members of $\mathcal{A}$}
+\label{sec:nonmembers}
+\begin{Theorem}
+\label{thm:nonmembers}
+Let $s\ge2$ and $h\ge1$ with $s<2^h$ and $2^h\equiv s\pmod{2^{s-1}+1}$. Then
+\begin{equation}
+\label{eq:Knon}
+K=\frac{2^{h+s-1}+s}{2^{s-1}+1}
+\end{equation}
+is an integer with $2^{h-1}<K<2^h$, and $K+h-3=\beta(K)-3\notin\mathcal{A}$. The hypotheses hold in the following cases:
+\begin{enumerate}
+\item $s=2^i$ with $i\ge1$, and $h>i$ with $h\equiv i\pmod{2(2^i-1)}$;
+\item $s=3$, and $h\equiv3\pmod4$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+Put $M=2^{s-1}+1$. Since $2^{s-1}\equiv-1\pmod M$, $2^{h+s-1}+s\equiv-2^h+s\equiv0\pmod M$, so $K$ is an integer. As $K=2^h-(2^h-s)/M$ with $0<2^h-s$ and $M\ge3$, we get $2^{h-1}<K<2^h$, hence $h=h(K)$ and $K+h=\beta(K)$. By Theorem~\ref{thm:equiv} and Theorem~\ref{thm:leading}, $K+h-3\in\mathcal{A}$ if and only if the state $(J,w)=(K-1,2^h-K)$ is successful. Here $w\ge1$, and $K\ge3$ because $s\ge2$ and $s<2^h$ force $h\ge2$; so $J\ge2$. The definition of $K$ is equivalent to $K(2^{s-1}+1)=2^{h+s-1}+s$, that is
+\[
+2^{s-1}w+s=K=J+1.
+\]
+Since $s\ge2$, Lemma~\ref{lem:least}(3) shows that $s$ is the least $\sigma\ge1$ with $2^\sigma w+\sigma\ge J+1$ and that the state $(J,w)$ fails. Hence Theorem~\ref{thm:step}(2a) applies, and the state is not successful.
+
+Case (1): $M=2^{s-1}+1$ with $s=2^i$, so $2^{2(s-1)}\equiv1\pmod M$ and $h=i+2(s-1)q$ gives $2^h\equiv2^i=s$; and $s=2^i<2^h$ because $h>i$. Case (2): $M=5$, $2^4\equiv1$ and $2^3\equiv3\pmod5$, so $h\equiv3\pmod4$ gives $2^h\equiv3=s$; and $3<2^h$ because $h\ge3$.
+\end{proof}
+
+For $s=2$ the condition is that $h\ge3$ is odd, $K=(2^{h+1}+2)/3$, and the exponent is $K+h-3=(h+1)+(2^{h+1}-10)/3$; with $a=h+1$ this is the family $a+(2^a-10)/3$, $a$ even, of Nicolas~\cite{nicolas2005open}. For $s=3$ and $h=3$, $K=7$ and $7\notin\mathcal{A}$; for $s=4$ and $h=8$, $K=228$ and $233\notin\mathcal{A}$.
+
+The families of Theorems~\ref{thm:members} and~\ref{thm:nonmembers} are exactly the exponents decided by at most one iteration of Algorithm~\ref{alg:membership}.
+
+\begin{Theorem}
+\label{thm:firststep}
+Let $a\ge0$ have a candidate $K$ (Theorem~\ref{thm:leading}), let $h=h(K)$, and let $(J,w)=(K-1,2^h-K)$ be the initial state.
+\begin{enumerate}
+\item Algorithm~\ref{alg:membership} returns $a\in\mathcal{A}$ without any iteration if and only if $K=2^h$, that is, $a$ is an exponent of Theorem~\ref{thm:members}(1).
+\item Algorithm~\ref{alg:membership} returns $a\in\mathcal{A}$ after exactly one iteration if and only if $a$ is an exponent of Theorem~\ref{thm:members}(2), that is, $K=(2^{h+s}+s)/(2^s+1)$ with $s=2^k$, $k\ge0$, $h\ge k+2$ and $h\equiv k\pmod{2^{k+1}}$.
+\item Algorithm~\ref{alg:membership} returns $a\notin\mathcal{A}$ at its first iteration if and only if $a$ is an exponent of Theorem~\ref{thm:nonmembers}(1) or~(2), that is, $K=(2^{h+s-1}+s)/(2^{s-1}+1)$ with either $s=2^i$, $i\ge1$, $h>i$ and $h\equiv i\pmod{2(2^i-1)}$, or $s=3$ and $h\equiv3\pmod4$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+Throughout the proof, $w=2^h-K$ and $J+1=K$, and $2^{h-1}<K\le2^h$.
+
+(1) The loop of Algorithm~\ref{alg:membership} is not entered if and only if $w=0$, that is $K=2^h$. The exponents with candidate $2^h$, $h\ge1$, are $\beta(2^h)-3=2^h+h-3$, which are the exponents of Theorem~\ref{thm:members}(1).
+
+(2) Suppose $w\ge1$.
+
+Step 1. Algorithm~\ref{alg:membership} returns $a\in\mathcal{A}$ after exactly one iteration if and only if the initial state does not fail and its first iteration gives $w'=0$. By Lemma~\ref{lem:least}(2), this holds if and only if there is an integer $s\ge1$ with
+\begin{equation}
+\label{eq:onestep}
+2^s(2^h-K)+s=K,
+\end{equation}
+and then $s$ is the integer computed by the algorithm.
+
+Step 2. Equation~\eqref{eq:onestep} is $K(2^s+1)=2^{h+s}+s$. Since $2^s\equiv-1\pmod{2^s+1}$, we have $2^{h+s}+s\equiv-2^h+s\pmod{2^s+1}$; hence, for given $s$ and $h$, an integer $K$ satisfying~\eqref{eq:onestep} exists if and only if $2^h\equiv s\pmod{2^s+1}$, and then $K=(2^{h+s}+s)/(2^s+1)=2^h-(2^h-s)/(2^s+1)$, so that $w=(2^h-s)/(2^s+1)$. In particular $w\ge1$ if and only if $s<2^h$.
+
+Step 3. We apply Lemma~\ref{lem:order}(3) with $m=s$, $N=2^s+1$, $t=s$ and $e=h$; note that $1\le s\le N-1$. The congruence $2^h\equiv s\pmod N$ holds if and only if, for some $0\le l\le s-1$, either $s=2^l$ and $h\equiv l\pmod{2s}$, or $s=N-2^l$ and $h\equiv s+l\pmod{2s}$. The second alternative is impossible, because $N-2^l\ge2^s+1-2^{s-1}=2^{s-1}+1>s$. Hence $s=2^k$ for an integer $k\ge0$ (and $k\le s-1$ holds automatically), and $h\equiv k\pmod{2^{k+1}}$.
+
+Step 4. The condition $s<2^h$ of Step 2 is $k<h$. Together with $h\equiv k\pmod{2^{k+1}}$ it gives $h\ge k+2^{k+1}\ge k+2$.
+
+Step 5. By Steps 1--4, if the algorithm returns $a\in\mathcal{A}$ after exactly one iteration, then $K=(2^{h+s}+s)/(2^s+1)$ with $s=2^k$, $k\ge0$, $h\ge k+2$ and $h\equiv k\pmod{2^{k+1}}$, so $a=K+h-3$ is an exponent of Theorem~\ref{thm:members}(2). Conversely, let $k\ge0$, $s=2^k$, $h\ge k+2$ with $h\equiv k\pmod{2^{k+1}}$, and $K=(2^{h+s}+s)/(2^s+1)$. By Theorem~\ref{thm:members}(2), $K$ is an integer with $2^{h-1}<K<2^h$, so $h=h(K)$, $K$ is the candidate of $a=K+h-3$, $w=2^h-K\ge1$, and~\eqref{eq:onestep} holds; by Step 1 the algorithm returns $a\in\mathcal{A}$ after exactly one iteration.
+
+(3) Suppose $w\ge1$.
+
+Step 1. By Theorem~\ref{thm:step} and Lemma~\ref{lem:least}(3), Algorithm~\ref{alg:membership} returns $a\notin\mathcal{A}$ at its first iteration if and only if there is an integer $s\ge2$ with
+\begin{equation}
+\label{eq:onefail}
+2^{s-1}(2^h-K)+s=K,
+\end{equation}
+and then $s$ is the integer computed by the algorithm.
+
+Step 2. Put $M=2^{s-1}+1$. Equation~\eqref{eq:onefail} is $KM=2^{h+s-1}+s$. Since $2^{s-1}\equiv-1\pmod M$, an integer $K$ satisfying~\eqref{eq:onefail} exists if and only if $2^h\equiv s\pmod M$, and then $K=2^h-(2^h-s)/M$ and $w=(2^h-s)/M$, so that $w\ge1$ if and only if $s<2^h$.
+
+Step 3. We apply Lemma~\ref{lem:order}(3) with $m=s-1$, $N=M$, $t=s$ and $e=h$; note that $2\le s\le2^{s-1}=M-1$. The congruence $2^h\equiv s\pmod M$ holds if and only if, for some $0\le l\le s-2$, either (i) $s=2^l$ and $h\equiv l\pmod{2(s-1)}$, or (ii) $s=M-2^l$ and $h\equiv s-1+l\pmod{2(s-1)}$.
+
+Case (i). Since $s\ge2$, $l\ge1$, and $l\le s-2=2^l-2$ excludes $l=1$; so $l\ge2$. The congruence is $h\equiv l\pmod{2(2^l-1)}$ and the condition $s<2^h$ is $h>l$. This is case (1) of Theorem~\ref{thm:nonmembers} with $i=l\ge2$.
+
+Case (ii). The condition is $2^{s-1}+1-s=2^l$. For $s\ge4$ it is impossible, because $2^{s-2}<2^{s-1}+1-s<2^{s-1}$: the left inequality is $s<2^{s-2}+1$ and the right one is $s>1$. For $s=2$ it gives $l=0$, and the congruence is $h\equiv1\pmod2$; the condition $s<2^h$ is $h\ge2$, so $h\ge3$ is odd. This is case (1) of Theorem~\ref{thm:nonmembers} with $i=1$. For $s=3$ it gives $l=1$, and the congruence is $h\equiv3\pmod4$; then $h\ge3$ and $s<2^h$ holds. This is case (2) of Theorem~\ref{thm:nonmembers}.
+
+Step 4. By Steps 1--3, if the algorithm returns $a\notin\mathcal{A}$ at its first iteration, then $a=K+h-3$ is an exponent of Theorem~\ref{thm:nonmembers}(1) or~(2). Conversely, for the integers $s$, $h$ and $K$ of Theorem~\ref{thm:nonmembers}(1) or~(2), that theorem gives $2^{h-1}<K<2^h$, so $h=h(K)$, $K$ is the candidate of $a=K+h-3$, $w\ge1$ and~\eqref{eq:onefail} holds with $s\ge2$; by Step 1 the algorithm returns $a\notin\mathcal{A}$ at its first iteration.
+\end{proof}
+
+Consequently, every exponent $a$ that is not of the form $2^r+r-2$ and is not covered by Theorems~\ref{thm:members} and~\ref{thm:nonmembers} requires at least two iterations of Algorithm~\ref{alg:membership}.
+
+The next proposition states in which sense these results contain the families of Nicolas~\cite{nicolas2005open} recalled in Section~\ref{sec:intro}.
+
+\begin{Proposition}
+\label{prop:nicolasfamilies}
+\begin{enumerate}
+\item The set $\{2^r+r-2:\ r\ge1\}$ is exactly the set of the exponents $a\ge0$ without candidate (Theorem~\ref{thm:leading}).
+\item The set $\{a+(2^a-11)/3:\ a\ge3\text{ odd}\}$ is exactly the set of the exponents $K+h-3$ of Theorem~\ref{thm:members}(2) with $k=0$, that is $s=1$. The correspondence is $a=h+1$, where $h\ge2$ is even and $K=(2^{h+1}+1)/3$.
+\item The set $\{a+(2^a-10)/3:\ a\ge4\text{ even}\}$ is exactly the set of the exponents $K+h-3$ of Theorem~\ref{thm:nonmembers}(1) with $i=1$, that is $s=2$. The correspondence is $a=h+1$, where $h\ge3$ is odd and $K=(2^{h+1}+2)/3$.
+\end{enumerate}
+\end{Proposition}
+\begin{proof}
+(1) This is the last statement of Theorem~\ref{thm:leading}. (2) For $k=0$ the hypotheses of Theorem~\ref{thm:members}(2) are $s=1$, $h\ge2$ and $h\equiv0\pmod2$, and $K=(2^{h+1}+1)/3$. Then $K+h-3=(h+1)+(2^{h+1}+1)/3-4=(h+1)+(2^{h+1}-11)/3$, and $h\mapsto a=h+1$ is a bijection from the even integers $h\ge2$ onto the odd integers $a\ge3$. (3) For $i=1$ the hypotheses of Theorem~\ref{thm:nonmembers}(1) are $s=2$, $h>1$ and $h\equiv1\pmod2$, and $K=(2^{h+1}+2)/3$. Then $K+h-3=(h+1)+(2^{h+1}+2)/3-4=(h+1)+(2^{h+1}-10)/3$, and $h\mapsto a=h+1$ is a bijection from the odd integers $h\ge3$ onto the even integers $a\ge4$.
+\end{proof}
+
+The two further remarks of~\cite{nicolas2005open}, that $c(2^r)$ is a power of $2$ when $r+2$ is a power of $2$ and that $c(2^r-1)$ is a power of $2$ when $r$ is a power of $2$, are Theorem~\ref{thm:members}(1) and Theorem~\ref{thm:symfamilies}(1) below.
+
+\section{Counting functions}
+\label{sec:counting}
+\begin{Theorem}
+\label{thm:counting}
+As $x\to\infty$,
+\[
+A(x)\ge2\log_2x-O(\log\log x),\qquad B(x)\ge\Bigl(\frac54+\frac E2\Bigr)\log_2x-O(\log\log x),
+\]
+where $E=\sum_{i\ge1}1/(2^i-1)=1.6066951\ldots$, so that $\frac54+\frac E2=2.0533475\ldots$. More precisely, for every $x\ge16$ and $H=\lfloor\log_2x\rfloor-1$,
+\[
+A(x)\ge2H-\log_2H-3,\qquad B(x)\ge\Bigl(\frac54+\frac E2\Bigr)H-\log_2H-5.
+\]
+\end{Theorem}
+\begin{proof}
+Let $x\ge16$, $H=\lfloor\log_2x\rfloor-1\ge3$ and $\kappa=\lfloor\log_2H\rfloor$, so that $2^\kappa\le H<2^{\kappa+1}$.
+
+Step 1 (the exponents are at most $x$). If $1\le h\le H$ and $2\le K\le2^h$, then $\beta(K)-3\le2^h+h-3\le x/2+\log_2x\le x$. All the exponents produced by Theorems~\ref{thm:members} and~\ref{thm:nonmembers} are of the form $\beta(K)-3$ with $2^{h-1}<K\le2^h$; we use them for $h\le H$ only. In the same way $2^r+r-2\le x$ for $1\le r\le H$.
+
+Step 2 (the exponents are distinct). The map $\beta$ is injective (Theorem~\ref{thm:leading}(2)), so distinct values of $K$ give distinct exponents. For fixed $h$, the integer $K$ in~\eqref{eq:Kmember} and in~\eqref{eq:Knon} equals $2^h-(2^h-s)/(2^s+1)$ and $2^h-(2^h-s)/(2^{s-1}+1)$ respectively, and both are strictly increasing in $s$, so distinct values of $s$ in the same theorem give distinct values of $K$; integers $K$ with distinct $h$ lie in distinct intervals $(2^{h-1},2^h]$. An exponent in $\mathcal{A}$ and an exponent outside $\mathcal{A}$ are distinct, and the exponents $2^r+r-2$ are not of the form $\beta(K)-3$.
+
+Step 3 (members). Theorem~\ref{thm:members}(1) gives the $H$ exponents $\beta(2^h)-3$, $1\le h\le H$, which are distinct from those of part (2) since there $K<2^h$. For $0\le k\le\kappa$, the integers $h=k+2^{k+1}t$ with $1\le t\le\lfloor(H-k)/2^{k+1}\rfloor$ satisfy the hypotheses of Theorem~\ref{thm:members}(2), because $h\ge k+2^{k+1}\ge k+2$, and $h\le H$; their number is at least $(H-k)/2^{k+1}-1$. We have $\sum_{k=0}^{\kappa}2^{-k-1}=1-2^{-\kappa-1}$ with $2^{-\kappa-1}H<1$, $\sum_{k\ge0}k/2^{k+1}=1$ and $\kappa+1\le\log_2H+1$, so
+\[
+\sum_{k=0}^{\kappa}\Bigl(\frac{H-k}{2^{k+1}}-1\Bigr)\ge H\bigl(1-2^{-\kappa-1}\bigr)-1-(\kappa+1)\ge H-\log_2H-3.
+\]
+Hence $A(x)\ge H+(H-\log_2H-3)=2H-\log_2H-3$.
+
+Step 4 (non-members). Theorem~\ref{thm:leading} gives the $H$ exponents $2^r+r-2$, $1\le r\le H$. For $1\le i\le\kappa$, the integers $h=i+2(2^i-1)t$ with $1\le t\le\lfloor(H-i)/(2(2^i-1))\rfloor$ satisfy the hypotheses of Theorem~\ref{thm:nonmembers}(1) and $h\le H$; their number is at least $(H-i)/(2(2^i-1))-1$. Since $2(2^i-1)\ge2^i$, we have $\sum_{i>\kappa}1/(2(2^i-1))\le\sum_{i>\kappa}2^{-i}=2^{-\kappa}<2/H$ and $\sum_{i\ge1}i/(2(2^i-1))\le\sum_{i\ge1}i2^{-i}=2$; and $\sum_{i\ge1}1/(2(2^i-1))=E/2$. Therefore
+\[
+\sum_{i=1}^{\kappa}\Bigl(\frac{H-i}{2(2^i-1)}-1\Bigr)\ge\frac E2H-2-2-\kappa\ge\frac E2H-\log_2H-4.
+\]
+Theorem~\ref{thm:nonmembers}(2) gives one exponent for each integer $3\le h\le H$ with $h\equiv3\pmod4$; there are at least $H/4-1$ of them. Hence $B(x)\ge H+(\frac E2H-\log_2H-4)+(\frac H4-1)=(\frac54+\frac E2)H-\log_2H-5$.
+
+Step 5 (the asymptotic form). Since $\log_2x-2<H\le\log_2x$, we have $\log_2H\le\log_2\log_2x$, and the two explicit bounds give the two asymptotic bounds.
+\end{proof}
+
+The next proposition counts the exponents of the three families of Nicolas~\cite{nicolas2005open} recalled in Section~\ref{sec:intro}, for comparison with Theorem~\ref{thm:counting} and with Theorem~\ref{thm:counting2} below.
+
+\begin{Proposition}
+\label{prop:nicolascount}
+For $x\ge1$ let $A_{\mathrm{N}}(x)$ be the number of exponents at most $x$ of the form $a+(2^a-11)/3$ with $a\ge3$ odd, and let $B_{\mathrm{N}}(x)$ be the number of exponents at most $x$ of the form $2^r+r-2$ with $r\ge1$ or of the form $a+(2^a-10)/3$ with $a\ge4$ even. Then
+\[
+A_{\mathrm{N}}(x)=\frac12\log_2x+O(1),\qquad B_{\mathrm{N}}(x)=\frac32\log_2x+O(1).
+\]
+\end{Proposition}
+\begin{proof}
+For $a\ge3$ and $\delta\in\{10,11\}$ put $e_\delta(a)=a+(2^a-\delta)/3$. Then $e_\delta$ is strictly increasing in $a$, and $2^a/3-4<e_\delta(a)\le2^a$, the right inequality because $3a\le2^{a+1}+\delta$. Hence $e_\delta(a)\le x$ holds for every $a\le\log_2x$ and fails for every $a\ge\log_2(3x+12)$, and $\log_2(3x+12)=\log_2x+O(1)$. The number of odd integers, and the number of even integers, in an interval of length $L$ is $L/2+O(1)$; this gives $A_{\mathrm{N}}(x)=\frac12\log_2x+O(1)$ and the same count for the exponents $a+(2^a-10)/3$, $a\ge4$ even. In the same way $2^r+r-2$ is strictly increasing in $r$ and $2^{r-1}\le2^r+r-2\le2^{r+1}$ for $r\ge1$, so the number of $r\ge1$ with $2^r+r-2\le x$ is $\log_2x+O(1)$. Finally an exponent $2^r+r-2$ has no candidate and an exponent $a+(2^a-10)/3$, $a\ge4$ even, has a candidate (Theorems~\ref{thm:leading} and~\ref{thm:nonmembers}), so the two kinds of exponents counted by $B_{\mathrm{N}}(x)$ are distinct.
+\end{proof}
+
+Thus the families of Theorems~\ref{thm:leading}, \ref{thm:members} and~\ref{thm:nonmembers} raise the constants $\frac12$ and $\frac32$ of Proposition~\ref{prop:nicolascount} to $2$ and $\frac54+\frac E2=2.0533475\ldots$ (Theorem~\ref{thm:counting}).
+
+\section{Successful states}
+\label{sec:states}
+For $J\ge1$ let
+\[
+S_J=\{w:\ 0\le w\le J-1,\ 2^{J+1}w\in\mathcal{E}_J\},\qquad N(J)=|S_J|,
+\]
+so that $S_J$ is the set of $w$ for which the state $(J,w)$ of Section~\ref{sec:recursion} is successful. By Theorems~\ref{thm:equiv} and~\ref{thm:leading}, an exponent $a$ with candidate $K$ and $h=h(K)$ belongs to $\mathcal{A}$ if and only if $2^h-K\in S_{K-1}$.
+
+\begin{Proposition}
+\label{prop:Ncount}
+\begin{enumerate}
+\item For $J\ge1$, $N(J)=\#\{T\subseteq\{1,\dots,J\}:\ \sum_{j\in T}j2^j\equiv0\pmod{2^{J+1}}\}$.
+\item For $h\ge1$, the number of $a\in\mathcal{A}$ whose candidate $K$ lies in $(2^{h-1},2^h]$ equals $\#\{K\in(2^{h-1},2^h]:\ 2^h-K\in S_{K-1}\}$.
+\end{enumerate}
+\end{Proposition}
+\begin{proof}
+(1) By Lemma~\ref{lem:greedy}, the map $T\mapsto\sum_{j\in T}j2^j$ is injective on the subsets of $\{1,\dots,J\}$. If $\sum_{j\in T}j2^j\equiv0\pmod{2^{J+1}}$, the sum equals $2^{J+1}w$ with $w\ge0$, and $2^{J+1}w\le(J-1)2^{J+1}+2$ by Lemma~\ref{lem:sum}, so $w\le J-1$ and $w\in S_J$; conversely every $w\in S_J$ is obtained from exactly one $T$. (2) The map $K\mapsto\beta(K)-3$ is injective (Theorem~\ref{thm:leading}), and $\beta(K)-3\in\mathcal{A}$ if and only if $2^{h}-K\in S_{K-1}$.
+\end{proof}
+
+\begin{Proposition}
+\label{prop:symmetry}
+For every $J\ge1$, $w\in S_J$ if and only if $J-1-w\in S_J$.
+\end{Proposition}
+\begin{proof}
+For $J=1$, $S_1=\{0\}$. Let $J\ge2$, $w\in S_J$, and let $T\subseteq\{1,\dots,J\}$ represent $V=2^{J+1}w$. Since $J+1\ge3$, $V\equiv0\pmod8$, and as in the proof of Theorem~\ref{thm:equiv}, $1\notin T$. By Lemma~\ref{lem:sum}, $\sum_{j=2}^{J}j2^j=(J-1)2^{J+1}$, so the set $\{2,\dots,J\}\setminus T$ represents $(J-1)2^{J+1}-2^{J+1}w=2^{J+1}(J-1-w)$, and $J-1-w\in S_J$. Applying this to $J-1-w$ gives the converse.
+\end{proof}
+
+\begin{Proposition}
+\label{prop:Npairs}
+For every $k\ge1$, $N(2k+1)=N(2k)$, and $4\mid N(J)$ for every $J\ge4$.
+\end{Proposition}
+\begin{proof}
+Let $k\ge1$. For $T\subseteq\{1,\dots,2k+1\}$ put $U=T\setminus\{2k+1\}$ and $\sigma_U=\sum_{j\in U}j2^j$. Since $(2k+1)2^{2k+1}\equiv2^{2k+1}\pmod{2^{2k+2}}$, the condition $\sum_{j\in T}j2^j\equiv0\pmod{2^{2k+2}}$ is $\sigma_U\equiv-[2k+1\in T]\,2^{2k+1}\pmod{2^{2k+2}}$. If $\sigma_U\equiv0\pmod{2^{2k+1}}$, then $\sigma_U$ is congruent to $0$ or to $2^{2k+1}$ modulo $2^{2k+2}$, and exactly one of the two choices for $2k+1\in T$ satisfies the condition; otherwise none does. By Proposition~\ref{prop:Ncount}(1), $N(2k+1)=\#\{U\subseteq\{1,\dots,2k\}:\ \sigma_U\equiv0\pmod{2^{2k+1}}\}=N(2k)$.
+
+Let $k\ge2$. Since $2k\cdot2^{2k}=k2^{2k+1}\equiv0\pmod{2^{2k+1}}$, the element $2k$ does not affect the condition of Proposition~\ref{prop:Ncount}(1) for $J=2k$, so $N(2k)=2Z$ with $Z=\#\{U\subseteq\{1,\dots,2k-1\}:\ \sigma_U\equiv0\pmod{2^{2k+1}}\}$. For such $U$, $1\notin U$, because $2k+1\ge5$ and $\sigma_U\equiv2\pmod8$ when $1\in U$. By Lemma~\ref{lem:sum}, $\sum_{j=2}^{2k-1}j2^j=(2k-2)2^{2k}=(k-1)2^{2k+1}\equiv0\pmod{2^{2k+1}}$, so $U\mapsto\{2,\dots,2k-1\}\setminus U$ maps the sets counted by $Z$ to themselves; it is an involution without fixed points because $\{2,\dots,2k-1\}\neq\emptyset$. Hence $Z$ is even and $4\mid N(2k)$; with $N(2k+1)=N(2k)$ this gives $4\mid N(J)$ for all $J\ge4$.
+\end{proof}
+
+The recursion of Theorem~\ref{thm:step} organizes all states into a forest. For a state $(J,w)$ with $w\ge1$ that does not fail, let $\Phi(J,w)=(J-s,\,2^sw+s-J-1)$, with $s$ as in Theorem~\ref{thm:step}; by that theorem, $\Phi(J,w)$ is a state. We call $(J,w)$ a \emph{root} if $w=0$ or if $(J,w)$ fails. The word forest has the following meaning. Consider the directed graph whose vertices are the states and whose edges are the pairs $((J,w),\Phi(J,w))$, one for each state $(J,w)$ that is not a root. Every vertex that is not a root has exactly one outgoing edge, the roots have none, and $\Phi$ lowers the first coordinate, so the graph has no cycle. Hence every connected component contains exactly one root and is a tree, in which every state $(J,w)$ is joined to the root by the path $(J,w),\Phi(J,w),\Phi(\Phi(J,w)),\dots$; we call this component the \emph{tree} of the root. We call the states $(J,w)$ with $\Phi(J,w)=(J',w')$ the \emph{children} of $(J',w')$, and $J$ the \emph{level} of the state $(J,w)$. For $J\ge1$ let $F(J)$ be the number of states $(J,w)$ that fail.
+
+\begin{Theorem}
+\label{thm:forest}
+\begin{enumerate}
+\item A state $(J,w)$ with $w\ge1$ fails if and only if $w=(J+1-\sigma)/2^{\sigma-1}$ for some integer $\sigma\ge2$ with $2^{\sigma-1}\mid J+1-\sigma$ and $J+1-\sigma\ge2^{\sigma-1}$. Distinct $\sigma$ give distinct $w$, so $F(J)$ is the number of such $\sigma$, and for every $L\ge1$,
+\[
+\sum_{J=1}^{L}F(J)=\sum_{\sigma=2}^{L}\Bigl\lfloor\frac{L+1-\sigma}{2^{\sigma-1}}\Bigr\rfloor.
+\]
+\item Let $(J',w')$ be a state and $m=v_2(J'+1+w')$. The states $(J,w)$ with $w\ge1$ that do not fail and satisfy $\Phi(J,w)=(J',w')$ are exactly the $m$ states $\bigl(J'+\sigma,\,(J'+1+w')/2^{\sigma}\bigr)$, $1\le\sigma\le m$.
+\item The map $\Phi$ makes the set of states a forest whose roots are the states $(J,0)$, $J\ge1$, and the failing states; a state is successful if and only if the root of its tree is a state $(J,0)$. For every $J\ge2$,
+\[
+N(J)=1+\sum_{\sigma=1}^{J-1}\#\bigl\{w'\in S_{J-\sigma}:\ 2^{\sigma}\mid J-\sigma+1+w'\bigr\},\qquad J=1+F(J)+\sum_{\sigma=1}^{J-1}\#\bigl\{0\le w'\le J-\sigma-1:\ 2^{\sigma}\mid J-\sigma+1+w'\bigr\}.
+\]
+\item The initial states $(K-1,2^h-K)$, $K\in(2^{h-1},2^h]$, are exactly the states $(J,w)$ with $J+1+w=2^h$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) By Lemma~\ref{lem:least}(3), a state $(J,w)$ with $w\ge1$ fails if and only if $2^{\sigma-1}w+\sigma=J+1$ for some integer $\sigma\ge2$, that is, if and only if $w=(J+1-\sigma)/2^{\sigma-1}$ for some $\sigma\ge2$; the condition that $w$ is an integer at least $1$ is the condition that $2^{\sigma-1}$ divides $J+1-\sigma$ and $J+1-\sigma\ge2^{\sigma-1}$. Conversely, for such a $\sigma$ the integer $w=(J+1-\sigma)/2^{\sigma-1}$ satisfies $1\le w\le(J-1)/2\le J-1$, because $\sigma\ge2$; so $(J,w)$ is a state with $w\ge1$, and it fails. The quotient $(J+1-\sigma)/2^{\sigma-1}$ is strictly decreasing in $\sigma$ on the range where it is positive, so distinct $\sigma$ give distinct $w$, and $F(J)$ is the number of admissible $\sigma$. Finally, for fixed $\sigma\ge2$, the integers $J\le L$ with $J+1-\sigma=2^{\sigma-1}t$ for some integer $t\ge1$ correspond to the integers $1\le t\le(L+1-\sigma)/2^{\sigma-1}$; their number is $\lfloor(L+1-\sigma)/2^{\sigma-1}\rfloor$ when $\sigma\le L$, and there are none when $\sigma>L$. Summing over $\sigma$ gives the formula.
+
+(2) Put $u=J'+1+w'$, so that $m=v_2(u)$. Since $0\le w'\le J'-1$,
+\begin{equation}
+\label{eq:urange}
+J'+1\le u\le2J'.
+\end{equation}
+
+Step 1 (every preimage has the stated form). Let $(J,w)$ be a state with $w\ge1$ that does not fail, with $\Phi(J,w)=(J',w')$, and let $s$ be its integer of Theorem~\ref{thm:step}. By the definition of $\Phi$, $J'=J-s$ and $w'=2^sw+s-J-1$. Hence $2^sw=w'+J+1-s=w'+J'+1=u$. So $2^s$ divides $u$, which gives $1\le s\le m$, and $J=J'+s$, $w=u/2^s$.
+
+Step 2 (the stated pairs are states). Let $1\le\sigma\le m$, $J=J'+\sigma$ and $w=u/2^\sigma$. Then $w$ is an integer, and $w\ge1$ because $u\ge1$. By~\eqref{eq:urange}, $w\le u/2\le J'=J-\sigma\le J-1$. So $(J,w)$ is a state with $w\ge1$.
+
+Step 3 (the integer $s$ of the state $(J,w)$ of Step 2 is $\sigma$). We have $2^\sigma w+\sigma=u+\sigma=J'+1+w'+\sigma=J+1+w'\ge J+1$. By~\eqref{eq:urange}, $2^{\sigma-1}w+\sigma-1=u/2+\sigma-1\le J'+\sigma-1=J-1\le J$. By Lemma~\ref{lem:least}(1), $s=\sigma$.
+
+Step 4 (the state $(J,w)$ of Step 2 does not fail). By~\eqref{eq:urange}, $2^{s-1}w+s=u/2+\sigma\le J'+\sigma=J<J+1$.
+
+Step 5 (its image is $(J',w')$). By Steps 3 and 4, $\Phi(J,w)=(J-\sigma,\,2^\sigma w+\sigma-J-1)=(J',\,u-J'-1)=(J',w')$.
+
+Step 6 (count). The $m$ states of Step 2 have distinct first coordinates $J'+\sigma$, so they are distinct; by Step 1 there are no other preimages.
+
+(3) $\Phi$ decreases $J$, so the orbit of every state ends at a root after finitely many steps, and every state that is not a root has exactly one image; this is a forest with the stated roots. By Theorem~\ref{thm:step}, a state is successful if and only if its orbit ends at a state $(J,0)$. The states of level $J$ are $(J,0)$, the $F(J)$ failing states, and the states $(J,w)$ with $w\ge1$ that do not fail; by part (2), the latter correspond bijectively to the pairs $(\sigma,w')$ with $1\le\sigma\le J-1$, $(J-\sigma,w')$ a state and $2^\sigma\mid J-\sigma+1+w'$, through $(J,w)\mapsto(s,\Phi(J,w))$. Such a state is successful if and only if $w'\in S_{J-\sigma}$. Counting the successful states and all states of level $J$ gives the two identities.
+
+(4) If $J=K-1$ and $w=2^h-K$, then $J+1+w=2^h$. Conversely, if $J+1+w=2^h$ with $0\le w\le J-1$, put $K=J+1$; then $K=2^h-w\le2^h$ and $2^h\le2J<2K$, so $K\in(2^{h-1},2^h]$ and $w=2^h-K$.
+\end{proof}
+
+By Theorem~\ref{thm:forest}(1), the number of failing states up to level $L$ is at most $\sum_{\sigma\ge2}L/2^{\sigma-1}=L$, and there is exactly one root $(J,0)$ at each level. By Theorem~\ref{thm:forest}(2), the number of children of a state $(J',w')$ is $v_2(J'+1+w')$. Consequently, by parts (3) and (4), an exponent $a$ with candidate $K$ belongs to $\mathcal{A}$ if and only if the state $(K-1,2^{h(K)}-K)$, the unique state of level $K-1$ with $J+1+w$ a power of $2$, lies in the tree of a root $(J,0)$.
+
+\begin{Proposition}
+\label{prop:roots}
+Let $(J,w)$ be a successful state with $w\ge1$, and let $T\subseteq\{1,\dots,J\}$ be the set representing $2^{J+1}w$. Then $1\notin T$, and the root of the tree of $(J,w)$ is $(\min T-1,0)$. For every $J\ge2$, exactly $N(J)/2$ of the successful states of level $J$ lie in the tree of the root $(1,0)$; in particular $N(J)$ is even.
+\end{Proposition}
+\begin{proof}
+Since $J+1\ge3$, $2^{J+1}w\equiv0\pmod8$, so $1\notin T$, as in the proof of Theorem~\ref{thm:equiv}. By the proof of Theorem~\ref{thm:step} and Lemma~\ref{lem:greedy}, if $j=\max T$ then $\Phi(J,w)=(j-1,w')$, where $T\setminus\{j\}$ represents $2^{j}w'$. Applying this repeatedly removes the elements of $T$ from the largest to the smallest; when the smallest element $\min T$ is removed, the remaining set is empty, the state reached is $(\min T-1,0)$, and $\min T-1\ge1$. Hence the root is $(\min T-1,0)$. Now let $J\ge2$. The successful state $(J,0)$ is represented by $T=\emptyset$ and is its own root, different from $(1,0)$. A successful state of level $J$ therefore lies in the tree of $(1,0)$ if and only if its representing set $T$ satisfies $\min T=2$, that is $2\in T$, since $1\notin T$. The map $T\mapsto\{2,\dots,J\}\setminus T$ of the proof of Proposition~\ref{prop:symmetry} is a bijection of the set of representing sets of the states in $S_J$ onto itself which exchanges the sets containing $2$ and the sets not containing $2$. Hence exactly half of the $N(J)$ successful states have $2\in T$.
+\end{proof}
+
+The sets $S_J$ can also be built from the smallest elements of $T$ upwards.
+
+\begin{Theorem}
+\label{thm:bottomup}
+We have $S_1=\{0\}$, and for every $J\ge2$:
+\begin{enumerate}
+\item if $J$ is odd, $S_J=\{c/2:\ c\in S_{J-1},\ c\text{ even}\}\cup\{(c+J)/2:\ c\in S_{J-1},\ c\text{ odd}\}$, and $c\mapsto w$ is a bijection from $S_{J-1}$ onto $S_J$;
+\item if $J$ is even, $S_J=\{c/2:\ c\in S_{J-1},\ c\text{ even}\}\cup\{c/2+J/2:\ c\in S_{J-1},\ c\text{ even}\}$, and the two sets are disjoint.
+\end{enumerate}
+Consequently, $N(J)=N(J-1)$ for odd $J$, $N(J)=2\,\#\{c\in S_{J-1}:\ c\text{ even}\}$ for even $J$, and for even $J$ and $0\le w<J/2$, $w\in S_J$ if and only if $w+J/2\in S_J$.
+\end{Theorem}
+\begin{proof}
+$S_1=\{0\}$ because $\mathcal{E}_1=\{0,2\}$ and $4\nmid2$. Let $J\ge2$. By Proposition~\ref{prop:Ncount}(1) and its proof, $w\in S_J$ if and only if $2^{J+1}w=\sum_{j\in T}j2^j$ for a set $T\subseteq\{1,\dots,J\}$, which is then unique. Write $x=1$ if $J\in T$ and $x=0$ otherwise, and $U=T\setminus\{J\}$. If $w\in S_J$, then $\sum_{j\in U}j2^j=2^{J+1}w-xJ2^J\equiv0\pmod{2^J}$, so $c=2^{-J}\sum_{j\in U}j2^j\in S_{J-1}$ and
+\[
+w=\frac{c+xJ}{2}.
+\]
+Conversely, if $c\in S_{J-1}$, $x\in\{0,1\}$ and $c+xJ$ is even, then $U\cup\{J\}$ (if $x=1$) or $U$ (if $x=0$), where $U$ represents $2^Jc$, represents $2^{J+1}(c+xJ)/2$, so $(c+xJ)/2\in S_J$. If $J$ is odd, $c+xJ$ is even exactly for $x\equiv c\pmod2$, which gives (1); the map $c\mapsto w$ is injective because $w$ determines $T$, hence $U$ and $c$. If $J$ is even, $c+xJ$ is even exactly when $c$ is even, with both $x=0$ and $x=1$, which gives (2); since $c\le J-2$, $c/2<J/2\le c'/2+J/2$ for all even $c,c'\in S_{J-1}$, so the two sets are disjoint. The consequences follow at once: for even $J$, $S_J=B\cup(B+J/2)$ with $B=\{c/2:\ c\in S_{J-1},\ c\text{ even}\}\subseteq[0,J/2)$.
+\end{proof}
+
+Theorem~\ref{thm:bottomup} gives a second proof of the equality $N(2k+1)=N(2k)$ of Proposition~\ref{prop:Npairs}. In terms of Theorem~\ref{thm:bottomup}, an exponent $a$ with candidate $K$ belongs to $\mathcal{A}$ if and only if $2^{h(K)}-K\in S_{K-1}$, where the sets $S_J$ are obtained from $S_1=\{0\}$ by the maps $c\mapsto c/2$ and $c\mapsto(c+J)/2$ of parts (1) and (2).
+
+The symmetry of Proposition~\ref{prop:symmetry} transports the states decided by one step of the recursion to further initial states. The first family below is the formula $c(2^k-1)=k2^{k-1}$ of~\cite{nicolas2005open} at $k=2^r$.
+
+\begin{Theorem}
+\label{thm:symfamilies}
+\begin{enumerate}
+\item For every $r\ge0$, $c(2^{2^r}-1)=2^{2^r+r-1}$; the candidate of the exponent $2^r+r-1$ is $K=2^r+1$.
+\item Let $i\ge1$, $\sigma=2^{i-1}+1$, and let $h\ge\sigma+2$ with $h\equiv i\pmod{\sigma+1}$. Then $w=(2^h-2\sigma+2)/(2^{\sigma+1}-1)$ is an even positive integer, $K=2^{h-1}+1+w/2$ satisfies $2^{h-1}+1<K<2^h$, and $K+h-3\in\mathcal{A}$.
+\item Let $i\ge2$, $\sigma=2^{i-1}+1$, and let $h\ge\sigma+1$ with $h\equiv i\pmod{\sigma}$. Then $w=(2^h-2\sigma+2)/(2^{\sigma}-1)$ is an even positive integer, $K=2^{h-1}+1+w/2$ satisfies $2^{h-1}+1<K<2^h$, and $K+h-3\notin\mathcal{A}$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) By the proof of Lemma~\ref{lem:cformula}, $c(2^k-1)=k2^{k-1}$; take $k=2^r$. Then $\mathcal{B}(2^k-1)+2=\{2,\dots,k+1\}$, whose largest element is $K=2^r+1$.
+
+(2) Put $M=2^{\sigma+1}-1$. Since $2^{\sigma+1}\equiv1\pmod M$ and $h\equiv i\pmod{\sigma+1}$, $2^h\equiv2^i=2\sigma-2\pmod M$, so $w$ is an integer; and $w\ge1$ because $2^h\ge2^{\sigma+2}=2M+2>M+2\sigma-2$. Put $J'=2^\sigma w-1\ge1$ and $J=J'+\sigma$. Since $v_2(J'+1)\ge\sigma$, Theorem~\ref{thm:forest}(2) shows that $(J,w)$ is a state that does not fail, with $\Phi(J,w)=(J',0)$; hence $w\in S_J$, and $J-1-w\in S_J$ by Proposition~\ref{prop:symmetry}. Moreover $2J-w=2^{\sigma+1}w+2\sigma-2-w=Mw+2\sigma-2=2^h$, so $w$ is even and, with $K=J+1$, $K=2^{h-1}+1+w/2$ and $2^h-K=J-1-w\in S_{K-1}$. Since $w\ge2$ and $w<2^h-2$, $2^{h-1}+1<K<2^h$, so $h=h(K)$, and Theorem~\ref{thm:leading} gives $K+h-3\in\mathcal{A}$.
+
+(3) Put $M'=2^{\sigma}-1$. As in (2), $2^h\equiv2^i=2\sigma-2\pmod{M'}$, so $w$ is an integer, and $w\ge1$ because $2^h\ge2^{\sigma+1}=2M'+2\ge M'+2\sigma-2$ for $\sigma\ge3$. Put $J=2^{\sigma-1}w+\sigma-1$. Then $J+1-\sigma=2^{\sigma-1}w\ge2^{\sigma-1}$ and $w=(J+1-\sigma)/2^{\sigma-1}$, so the state $(J,w)$ fails by Theorem~\ref{thm:forest}(1), and $w\notin S_J$; by Proposition~\ref{prop:symmetry}, $J-1-w\notin S_J$. Moreover $2J-w=2^\sigma w+2\sigma-2-w=M'w+2\sigma-2=2^h$, and the conclusion follows as in (2).
+\end{proof}
+
+\begin{Theorem}
+\label{thm:counting2}
+As $x\to\infty$,
+\[
+A(x)\ge(3+C_1)\log_2x-O(\log\log x),\qquad B(x)\ge\Bigl(\frac54+\frac E2+C_2\Bigr)\log_2x-O(\log\log x),
+\]
+where $C_1=\sum_{k\ge0}1/(2^k+2)=0.9655832\ldots$, $C_2=\sum_{k\ge1}1/(2^k+1)=0.7644997\ldots$ and $E$ is as in Theorem~\ref{thm:counting}; thus $3+C_1=3.9655832\ldots$ and $\frac54+\frac E2+C_2=2.8178473\ldots$. More precisely, for every $x\ge16$ and $H=\lfloor\log_2x\rfloor-1$,
+\[
+A(x)\ge(3+C_1)H-3\log_2H-10,\qquad B(x)\ge\Bigl(\frac54+\frac E2+C_2\Bigr)H-3\log_2H-9.
+\]
+\end{Theorem}
+\begin{proof}
+We keep the notation $H=\lfloor\log_2x\rfloor-1$ of the proof of Theorem~\ref{thm:counting}, whose families we use together with those of Theorem~\ref{thm:symfamilies}. All the exponents are of the form $\beta(K)-3$ with $K\le2^h$, $h\le H$, hence at most $x$, and distinct values of $K$ give distinct exponents. For $h\ge4$, the integers $K$ of Theorem~\ref{thm:symfamilies}(2) and~(3) satisfy $K=2^{h-1}+1+w/2$ with $w\le2^h/7$, hence $K<\frac23\,2^h$ because $2^{h-1}(\frac13-\frac17)>1$; the integers $K$ of Theorems~\ref{thm:members}(2) and~\ref{thm:nonmembers} satisfy $K>2^h-2^h/3=\frac23\,2^h$, since there the denominators $2^s+1$ and $2^{s-1}+1$ are at least $3$. In Theorem~\ref{thm:symfamilies}(2) and~(3), $w/2$ is strictly decreasing in $\sigma$, and $K>2^{h-1}+1$; and for $h\ge3$ the integer $2^{h-1}+1$ of Theorem~\ref{thm:symfamilies}(1) differs from $2^h$ and from the integers of Theorem~\ref{thm:members}(2), which exceed $\frac23\,2^h$. Finally, an exponent in $\mathcal{A}$ and an exponent outside $\mathcal{A}$ are distinct. Hence, for $h\ge4$, the integers $K$ produced in the block $(2^{h-1},2^h]$ by the families of members are distinct, and so are those produced by the families of non-members. In the two counts below we use that, for integers $q\ge1$ and $n_0$, the number of integers $h\in[n_0,H]$ in a given residue class modulo $q$ is at least $(H-n_0+1)/q-1$, and that $2^{\kappa+1}>H$ for $\kappa=\lfloor\log_2H\rfloor$.
+
+Members. The proof of Theorem~\ref{thm:counting} gives at least $2H-\log_2H-3$ exponents. Theorem~\ref{thm:symfamilies}(1) gives the exponent $2^r+r-1$, whose candidate is $K=2^r+1=2^{h-1}+1$ with $h=r+1$, for each $4\le h\le H$; these are $H-3$ exponents. Theorem~\ref{thm:symfamilies}(2) gives, for each $1\le i\le\kappa$ and $\sigma=2^{i-1}+1$, one exponent for each integer $h\in[\sigma+2,H]$ with $h\equiv i\pmod{\sigma+1}$, and $\sigma+2\ge4$; the number of these $h$ is at least $(H-\sigma-1)/(\sigma+1)-1=H/(\sigma+1)-2$. Since $\sigma+1=2^{i-1}+2$ and $\sum_{i\ge1}1/(2^{i-1}+2)=C_1$,
+\[
+\sum_{i=1}^{\kappa}\Bigl(\frac{H}{2^{i-1}+2}-2\Bigr)=C_1H-H\sum_{i>\kappa}\frac{1}{2^{i-1}+2}-2\kappa\ge C_1H-4-2\log_2H,
+\]
+because $\sum_{i>\kappa}1/(2^{i-1}+2)\le\sum_{i>\kappa}2^{1-i}=2^{1-\kappa}<4/H$. Adding the three contributions,
+\[
+A(x)\ge(2H-\log_2H-3)+(H-3)+(C_1H-4-2\log_2H)=(3+C_1)H-3\log_2H-10.
+\]
+
+Non-members. The proof of Theorem~\ref{thm:counting} gives at least $(\frac54+\frac E2)H-\log_2H-5$ exponents. Theorem~\ref{thm:symfamilies}(3) gives, for each $2\le i\le\kappa$ and $\sigma=2^{i-1}+1$, one exponent for each integer $h\in[\sigma+1,H]$ with $h\equiv i\pmod\sigma$, and $\sigma+1\ge4$; the number of these $h$ is at least $(H-\sigma)/\sigma-1=H/\sigma-2$. Since $\sum_{i\ge2}1/(2^{i-1}+1)=\sum_{k\ge1}1/(2^k+1)=C_2$ and $\sum_{i>\kappa}1/(2^{i-1}+1)\le2^{1-\kappa}<4/H$,
+\[
+\sum_{i=2}^{\kappa}\Bigl(\frac{H}{2^{i-1}+1}-2\Bigr)\ge C_2H-4-2\log_2H.
+\]
+Hence $B(x)\ge(\frac54+\frac E2+C_2)H-3\log_2H-9$. Since $H\ge\log_2x-2$ and $\log_2H\le\log_2\log_2x$, the asymptotic bounds follow.
+
+In these bounds, the term $1$ of $3+C_1$ comes from Theorem~\ref{thm:symfamilies}(1), and the terms $C_1$ and $C_2$ come from Theorem~\ref{thm:symfamilies}(2) and~(3), that is, from the images under the symmetry $w\mapsto J-1-w$ of Proposition~\ref{prop:symmetry} of the states $(J,w)$ that reach a state $(J',0)$ in one step and of the failing states, respectively.
+\end{proof}
+
+\section{The analogue for an arbitrary prime}
+\label{sec:primes}
+Let $p$ be a prime and $v_p$ the $p$-adic valuation. Put
+\[
+c_p(n)=\sum_{k=1}^{n}p^{v_p(k)},\qquad \mathcal{A}_p=\{a\ge0:\ p^a\in c_p(\mathbb{N})\},\qquad A_p(x)=\#\{a\in\mathcal{A}_p:\ a\le x\},
+\]
+and $B_p(x)=\#\{a\in\mathbb{Z}\cap[0,x]:\ a\notin\mathcal{A}_p\}$, so that $c_2=c$, $\mathcal{A}_2=\mathcal{A}$, $A_2=A$ and $B_2=B$. The interpretation of $c$ recalled in Section~\ref{sec:intro} extends to every prime.
+
+\begin{Proposition}
+\label{prop:Fp}
+For every $n\ge1$, $c_p(n)$ is the exponent of $1-X$ in the factorization of $(1-X)(1-X^2)\cdots(1-X^n)$ into irreducible factors over $\mathbb{F}_p[X]$.
+\end{Proposition}
+\begin{proof}
+Write $k=p^vk'$ with $p\nmid k'$. In characteristic $p$, $1-X^k=(1-X^{k'})^{p^v}$, and $1-X^{k'}=(1-X)(1+X+\dots+X^{k'-1})$, where the second factor takes the value $k'\neq0$ at $X=1$; hence $1-X$ divides $1-X^k$ exactly $p^v=p^{v_p(k)}$ times, and the exponents add up over $k\le n$.
+\end{proof}
+
+\begin{Lemma}
+\label{lem:cp}
+\begin{enumerate}
+\item For every $n\ge1$, $c_p(pn)=p\,c_p(n)+(p-1)n$.
+\item For every $m\ge0$, $c_p(p^m-1)=m(p-1)p^{m-1}$ and $c_p(p^m)=p^{m-1}\bigl((p-1)m+p\bigr)$.
+\item If $n=\sum_{i\ge0}d_ip^i$ is the expansion of $n$ in base $p$, then $c_p(n)=\sum_{i\ge0}d_i\,p^{i-1}\bigl((p-1)i+p\bigr)$.
+\end{enumerate}
+\end{Lemma}
+\begin{proof}
+(1) Among $k\le pn$, the $(p-1)n$ integers prime to $p$ contribute $1$ each, and $k=pk_1$ with $k_1\le n$ contributes $p\cdot p^{v_p(k_1)}$. (2) For $0\le v\le m-1$, exactly $(p-1)p^{m-1-v}$ integers $k\in[1,p^m-1]$ have $v_p(k)=v$, which gives $c_p(p^m-1)$, and $c_p(p^m)=c_p(p^m-1)+p^m$. (3) Let $m\ge0$, $1\le d\le p-1$ and $0\le s<p^m$. For $0\le t\le d-1$ and $1\le k\le p^m-1$, $v_p(tp^m+k)=v_p(k)$, and $v_p(tp^m)=m$ for $1\le t\le d$; hence $c_p(dp^m+s)=d\bigl(c_p(p^m-1)+p^m\bigr)+c_p(s)=d\,c_p(p^m)+c_p(s)$, with $c_p(0)=0$. Induction on the number of nonzero digits and (2) give (3).
+\end{proof}
+
+For $p=2$, part (1) is the recurrence $c(2n)=2c(n)+n$ of~\cite{nicolas2005open}, and part (3) is Lemma~\ref{lem:cformula}. Put $t_i=p\,c_p(p^i)=p^i\bigl((p-1)i+p\bigr)$ for $i\ge0$, and let $\mathcal{E}^{(p)}_K$ be the set of sums $\sum_{0\le i<K}d_it_i$ with $0\le d_i\le p-1$.
+
+\begin{Theorem}
+\label{thm:primes}
+\begin{enumerate}
+\item For $a\ge0$, $a\in\mathcal{A}_p$ if and only if $p^{a+1}=\sum_{i\ge0}d_it_i$ with $0\le d_i\le p-1$, not all zero; then $n=\sum_id_ip^i$ satisfies $c_p(n)=p^a$.
+\item For every $m\ge0$, $\sum_{0\le i<m}(p-1)t_i=m(p-1)p^m<t_m$. Hence a representation $V=\sum_id_it_i$ with digits $0\le d_i\le p-1$ is unique, and its largest index $K$ with $d_K\neq0$ satisfies $d_K=\lfloor V/t_K\rfloor$.
+\item For $K\ge0$ let $g(K)$ be the least integer $g\ge1$ with $p^g\ge(p-1)(K+1)+1$. If $p^{b}=\sum_id_it_i$ has largest index $K$, then $b=K+g(K)$ and $d_K=\lfloor p^{g(K)}/((p-1)K+p)\rfloor\in[1,p-1]$. The map $K\mapsto K+g(K)$ is strictly increasing on $\{0,1,2,\dots\}$, and the integers $b\ge1$ outside its image are exactly $b=(p^g-1)/(p-1)+g$, $g\ge1$. Consequently, $a\notin\mathcal{A}_p$ for $a=(p^g-1)/(p-1)+g-1$, $g\ge1$, and every other $a\ge0$ has a unique candidate $K$ with $K+g(K)=a+1$.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) By Lemma~\ref{lem:cp}(3), $p\,c_p(n)=\sum_id_it_i$, and every digit vector with digits in $[0,p-1]$, not all zero, is the expansion of a unique $n\ge1$.
+
+(2) By Lemma~\ref{lem:cp}(2), $\sum_{i<m}(p-1)t_i=p\,c_p(p^m-1)=m(p-1)p^m<p^m((p-1)m+p)=t_m$. If $K$ is the largest index with $d_K\neq0$, then $0\le V-d_Kt_K\le\sum_{i<K}(p-1)t_i<t_K$, so $d_K=\lfloor V/t_K\rfloor$; uniqueness follows by induction.
+
+(3) Put $u=(p-1)(K+1)$ and $\gamma=b-K$. From $t_K\le p^b\le\sum_{i\le K}(p-1)t_i=(K+1)(p-1)p^{K+1}$ we get $u+1=(p-1)K+p\le p^\gamma\le pu$. The interval $[u+1,pu]$ contains exactly one power of $p$: if $g$ is least with $p^g\ge u+1$, then $g\ge1$ because $u+1\ge p$, and $p^{g-1}\le u$, so $p^g\le pu$; and $p^{g+1}>pu$. Hence $\gamma=g(K)$. Since $p^{g(K)}\le pu<p((p-1)K+p)$ and $p^{g(K)}\ge(p-1)K+p$, part (2) gives $1\le d_K\le p-1$. Next, $u$ increases by $p-1$ when $K$ increases by $1$, so $g(K+1)-g(K)\in\{0,1\}$, and $g(K+1)=g(K)+1$ exactly when $p^{g(K)}<(p-1)(K+2)+1$, that is $p^{g(K)}-1\in[u,u+p-2]$. Both $p^{g}-1$ and $u$ are multiples of $p-1$, so this means $p^{g(K)}-1=u$, that is $K+1=(p^{g}-1)/(p-1)$ with $g=g(K)$. Hence $K\mapsto K+g(K)$ increases by $1$ at each step except from $K=(p^g-1)/(p-1)-1$, where $g(K)=g$, to $K+1$, where it increases by $2$ and skips $b=K+g+1=(p^g-1)/(p-1)+g$; every $g\ge1$ occurs, and $0+g(0)=1$. The last statement follows from (1) with $b=a+1$.
+\end{proof}
+
+For $p=2$, the change of index $j=i+2$ turns $t_i$ into $j2^j/4$; the candidate of Theorem~\ref{thm:primes} is the candidate of Theorem~\ref{thm:leading} minus $2$, and the excluded exponents are $2^g+g-2$. The recursion of Theorem~\ref{thm:step} extends to every prime as follows. A \emph{$p$-state} is a pair $(K,w)$ of integers with $K\ge0$ and $0\le w\le(p-1)K$; it is \emph{successful} if $p^Kw\in\mathcal{E}^{(p)}_K$.
+
+\begin{Theorem}
+\label{thm:primestep}
+\begin{enumerate}
+\item Let $a\ge0$ have the candidate $K$, put $g=a+1-K$, $u=(p-1)K+p$, $d=\lfloor p^g/u\rfloor$ and $w_0=p^g-du$. Then $a\in\mathcal{A}_p$ if and only if $w_0\le(p-1)K$ and the $p$-state $(K,w_0)$ is successful.
+\item A $p$-state $(K,0)$ is successful. Let $(K,w)$ be a $p$-state with $w\ge1$, so $K\ge1$; let $s$ be the least integer $\sigma\ge1$ with $p^\sigma w\ge(p-1)(K-\sigma)+p$, put $i=K-s$, $u_i=(p-1)i+p$, $d=\lfloor p^sw/u_i\rfloor$ and $w'=p^sw-du_i$. Then $1\le s\le K$, and $(K,w)$ is successful if and only if $d\le p-1$, $w'\le(p-1)i$, and the $p$-state $(i,w')$ is successful.
+\end{enumerate}
+\end{Theorem}
+\begin{proof}
+(1) By Theorem~\ref{thm:primes}, $a\in\mathcal{A}_p$ if and only if $p^{a+1}=dt_K+R$ with $R\in\mathcal{E}^{(p)}_K$, where $d=\lfloor p^{a+1}/t_K\rfloor$; here $R=p^K(p^g-du)=p^Kw_0$, and $R\le\max\mathcal{E}^{(p)}_K=(p-1)Kp^K$ means $w_0\le(p-1)K$.
+
+(2) Let $V=p^Kw\ge1$. For $0\le i'<K$, $t_{i'}\le V$ is equivalent to $(p-1)i'+p\le p^{K-i'}w$, so $i=K-s$ is the largest index below $K$ with $t_i\le V$; $s\le K$ because $p^Kw\ge p$. By Theorem~\ref{thm:primes}(2), a representation of $V$ in $\mathcal{E}^{(p)}_K$ has largest index $i$ and digit $\lfloor V/t_i\rfloor=d$: indeed its largest index $m$ satisfies $t_m\le V$, so $m\le i$, and $m<i$ is impossible because $V\le\sum_{i'\le m}(p-1)t_{i'}<t_{m+1}\le t_i\le V$. Hence $V\in\mathcal{E}^{(p)}_K$ if and only if $d\le p-1$ and $V-dt_i=p^iw'\in\mathcal{E}^{(p)}_i$; the latter requires $p^iw'\le(p-1)ip^i$, that is $w'\le(p-1)i$.
+\end{proof}
+
+Since $s\ge1$, the index decreases at each step, so the recursion ends after at most $K$ steps; by the minimality of $s$, $p^{s-1}w<(p-1)(i+1)+p$, so all the integers involved are $O(pK)$. For an odd prime, the condition $w_0\le(p-1)K$ in part (1) can fail, which never happens for $p=2$; this gives a family of non-members with no analogue for $p=2$.
+
+\begin{Theorem}
+\label{thm:primefamilies}
+Let $p$ be a prime.
+\begin{enumerate}
+\item For every $g\ge1$, $K=(p^g-p)/(p-1)$ satisfies $c_p(p^K)=p^{K+g-1}$; thus $K+g-1\in\mathcal{A}_p$.
+\item If $p$ is odd, then $c_p(p^m-1)$ is not a power of $p$ for any $m\ge1$.
+\item If $p$ is odd and $g\ge2$ is even, then $K=(p^g-2p+1)/(2(p-1))$ is a nonnegative integer with candidate exponent $K+g-1$, and $K+g-1\notin\mathcal{A}_p$.
+\end{enumerate}
+Consequently, for every odd prime $p$, $A_p(x)\ge\log_px-O(1)$ and $B_p(x)\ge\frac32\log_px-O(1)$.
+\end{Theorem}
+\begin{proof}
+(1) $(p-1)K+p=p^g$, so $c_p(p^K)=p^{K-1}p^g$ by Lemma~\ref{lem:cp}(2). (2) $c_p(p^m-1)=m(p-1)p^{m-1}$, and $m(p-1)$ is not a power of $p$ because $p-1\ge2$ divides it and is prime to $p$. (3) Since $p^2-1=(p-1)(p+1)$ and $p+1$ is even, $p^2\equiv1\pmod{2(p-1)}$, so $p^g\equiv1$ and $p^g-2p+1\equiv2-2p\equiv0\pmod{2(p-1)}$; and $p^g\ge p^2>2p-1$, so $K\ge0$. Put $u=(p-1)K+p=(p^g+1)/2$. Then $u=(p-1)(K+1)+1\le p^g$ and $p^g\le p(u-1)=p(p^g-1)/2$ because $p\ge3$, so $g(K)=g$ by the proof of Theorem~\ref{thm:primes}(3), and $K+g-1$ has candidate $K$. Moreover $d=\lfloor p^g/u\rfloor=\lfloor2p^g/(p^g+1)\rfloor=1$ and $w_0=p^g-u=u-1=(p-1)K+p-1>(p-1)K$, so $K+g-1\notin\mathcal{A}_p$ by Theorem~\ref{thm:primestep}(1).
+
+For the counting statement, the exponents of (1), of (3) and of Theorem~\ref{thm:primes}(3) are at most $p^{g}/(p-1)+g$ for the corresponding $g$, so those with $g\le\log_px-1$ are at most $x$ for large $x$; there are $\log_px-O(1)$ values of $g$ in (1) and in Theorem~\ref{thm:primes}(3), and $\frac12\log_px-O(1)$ even values in (3). Members and non-members are distinct, the exponents of Theorem~\ref{thm:primes}(3) have no candidate, and distinct $g$ give distinct $K$ and hence, by Theorem~\ref{thm:primes}(3), distinct exponents.
+\end{proof}
+
+For $p=3$, Theorem~\ref{thm:primefamilies} gives $c_3(27)=81$, so $4\in\mathcal{A}_3$, and $2\notin\mathcal{A}_3$; Theorem~\ref{thm:primes}(3) gives $1\notin\mathcal{A}_3$; and $c_3(13)=c_3(1)+c_3(3)+c_3(9)=1+5+21=27$, so $3\in\mathcal{A}_3$.
+
+The exponents rejected by the condition $w_0\le(p-1)K$ of Theorem~\ref{thm:primestep}(1), which we call \emph{immediate failures}, admit a complete description.
+
+\begin{Theorem}
+\label{thm:immediate}
+Let $a\ge0$ have the candidate $K$, and put $g=a+1-K$ and $u=(p-1)K+p$. Then $a$ is an immediate failure if and only if $u\mid p^g+j$ for some $j\in\{1,\dots,p-1\}$; in that case $e=(p^g+j)/u$ satisfies $2\le e\le p-1$. Consequently, there are no immediate failures for $p=2$; for $p=3$ the immediate failures are exactly the exponents of Theorem~\ref{thm:primefamilies}(3); and for every prime $p$ the immediate failures are the exponents $K+g-1$ obtained from the triples $(g,e,j)$ with $2\le e\le p-1$, $1\le j\le p-1$, $e\mid p^g+j$, $u=(p^g+j)/e\equiv1\pmod{p-1}$, $u\ge p$ and $u\le p^g\le p(u-1)$, through $K=(u-p)/(p-1)$. In particular, there are at most $(p-1)(p-2)$ immediate failures with a given $g$.
+\end{Theorem}
+\begin{proof}
+Step 1 (the quantities $d$ and $w_0$). Since $K$ is the candidate of $a$, $g=g(K)$, and the proof of Theorem~\ref{thm:primes}(3) gives $u\le p^g\le p(u-1)$. Hence $d=\lfloor p^g/u\rfloor$ satisfies $1\le d\le p-1$, and $w_0=p^g-du$ satisfies $0\le w_0<u$.
+
+Step 2 (the criterion). Since $(p-1)K=u-p$, the exponent $a$ is an immediate failure if and only if $u-p<w_0<u$, that is $w_0=u-j$ with $j\in\{1,\dots,p-1\}$, that is $p^g+j=(d+1)u$. Conversely, if $u\mid p^g+j$ with $1\le j\le p-1$ and $e=(p^g+j)/u$, then $p^g=(e-1)u+(u-j)$ with $0<u-j<u$, because $j\le p-1<u$; by the uniqueness of the Euclidean division, $d=e-1$ and $w_0=u-j>u-p$. This proves the first statement, with $e=d+1$.
+
+Step 3 (the range of $e$). By Step 1, $e=d+1\ge2$; and $eu=p^g+j\le p(u-1)+p-1<pu$ gives $e\le p-1$. For $p=2$ the range $2\le e\le p-1$ is empty, so there are no immediate failures.
+
+Step 4 (the parametrization). If $a$ is an immediate failure, Steps 1--3 give a triple $(g,e,j)$ with $2\le e\le p-1$, $1\le j\le p-1$, $e\mid p^g+j$ and $u=(p^g+j)/e$; moreover $u=(p-1)K+p\equiv1\pmod{p-1}$, $u\ge p$ and $u\le p^g\le p(u-1)$. Conversely, given a triple with these properties, $K=(u-p)/(p-1)$ is a nonnegative integer with $(p-1)K+p=u$; the inequality $p^g\ge u=(p-1)(K+1)+1$ and the inequality $p^{g-1}\le u-1$ say that $g$ is the least integer with $p^g\ge(p-1)(K+1)+1$, and $g\ge1$ because $p^g\ge u\ge p$, so $g=g(K)$ and $K+g-1$ has the candidate $K$; and $u\mid p^g+j$, so $K+g-1$ is an immediate failure by Step 2.
+
+Step 5 (the case $p=3$). Here $e=2$ and $j\in\{1,2\}$; the condition $2\mid3^g+j$ forces $j=1$, and $u=(3^g+1)/2$ satisfies $u\equiv1\pmod2$ exactly when $3^g\equiv1\pmod4$, that is when $g$ is even. Then $K=(u-3)/2=(3^g-5)/4$, which is the integer $K=(p^g-2p+1)/(2(p-1))$ of Theorem~\ref{thm:primefamilies}(3) for $p=3$; conversely, for every even $g\ge2$ the proof of Theorem~\ref{thm:primefamilies}(3) gives $u\ge3$ and $u\le3^g\le3(u-1)$, so the triple $(g,2,1)$ satisfies the conditions of Step 4.
+
+Step 6 (the count). For a given $g$, each of the $(p-2)(p-1)$ pairs $(e,j)$ gives at most one $u$, hence at most one exponent.
+\end{proof}
+
+The sets of successful $p$-states satisfy the analogues of Proposition~\ref{prop:symmetry} and Theorem~\ref{thm:bottomup}. For $K\ge0$ let $S^{(p)}_K$ be the set of $w$ such that $(K,w)$ is a successful $p$-state, and $N_p(K)=|S^{(p)}_K|$; let $u_K=(p-1)K+p$.
+
+\begin{Theorem}
+\label{thm:primebottomup}
+\begin{enumerate}
+\item $S^{(p)}_0=\{0\}$, and for every $K\ge0$, $S^{(p)}_{K+1}=\{(w+du_K)/p:\ w\in S^{(p)}_K,\ 0\le d\le p-1,\ p\mid w+du_K\}$, the elements obtained from distinct pairs $(w,d)$ being distinct.
+\item If $p\nmid K$, then for each $w\in S^{(p)}_K$ exactly one $d\in\{0,\dots,p-1\}$ satisfies $p\mid w+du_K$, and $N_p(K+1)=N_p(K)$.
+\item If $p\mid K$, then $S^{(p)}_{K+1}=\bigcup_{d=0}^{p-1}\bigl(B+d\,u_K/p\bigr)$ with $B=\{w/p:\ w\in S^{(p)}_K,\ p\mid w\}$, the $p$ sets being disjoint; thus $N_p(K+1)=p\,\#\{w\in S^{(p)}_K:\ p\mid w\}$.
+\item For every $K\ge0$, $w\in S^{(p)}_K$ if and only if $(p-1)K-w\in S^{(p)}_K$.
+\end{enumerate}
+An exponent $a$ with candidate $K$ belongs to $\mathcal{A}_p$ if and only if $w_0\le(p-1)K$ and $w_0\in S^{(p)}_K$, with $w_0$ as in Theorem~\ref{thm:primestep}(1).
+\end{Theorem}
+\begin{proof}
+(1) $\mathcal{E}^{(p)}_0=\{0\}$ gives $S^{(p)}_0=\{0\}$. By Theorem~\ref{thm:primes}(2), $p^{K+1}w'\in\mathcal{E}^{(p)}_{K+1}$ if and only if $p^{K+1}w'=dt_K+p^Kw$ with $0\le d\le p-1$ and $p^Kw\in\mathcal{E}^{(p)}_K$; since $t_K=p^Ku_K$, this is $pw'=w+du_K$, and $0\le w\le(p-1)K$ holds for every element $p^Kw$ of $\mathcal{E}^{(p)}_K$. Distinct pairs $(w,d)$ give distinct representations, hence distinct $w'$ by Theorem~\ref{thm:primes}(2). (2) $u_K\equiv(p-1)K\equiv-K\pmod p$ is invertible modulo $p$ when $p\nmid K$. (3) If $p\mid K$, then $p\mid u_K$, and $p\mid w+du_K$ is $p\mid w$ for all $d$; the sets are disjoint because $B\subseteq[0,(p-1)K/p]$ and $u_K/p=(p-1)K/p+1$. (4) By Lemma~\ref{lem:cp}(2), $\sum_{i<K}(p-1)t_i=(p-1)Kp^K$; replacing every digit $d_i$ by $p-1-d_i$ maps a representation of $p^Kw$ to one of $p^K((p-1)K-w)$. The last statement is Theorem~\ref{thm:primestep}(1).
+\end{proof}
+
+For $p=2$, Theorem~\ref{thm:primebottomup} is Theorem~\ref{thm:bottomup} and Proposition~\ref{prop:symmetry} after the change of index of Section~\ref{sec:primes}.
+
+The exponents accepted without any step of the recursion are also described completely; this is the analogue of Theorem~\ref{thm:firststep}(1).
+
+\begin{Proposition}
+\label{prop:primezero}
+Let $a\ge0$ have the candidate $K$, and put $g=a+1-K$, $u=(p-1)K+p$ and $w_0$ as in Theorem~\ref{thm:primestep}(1). Then $w_0=0$ if and only if $u=p^g$, that is $K=(p^g-p)/(p-1)$. In that case $a\in\mathcal{A}_p$, and $a=K+g-1$ is an exponent of Theorem~\ref{thm:primefamilies}(1); conversely every exponent of Theorem~\ref{thm:primefamilies}(1) has $w_0=0$.
+\end{Proposition}
+\begin{proof}
+By the proof of Theorem~\ref{thm:primes}(3), $d=\lfloor p^g/u\rfloor$ satisfies $1\le d\le p-1$, and $w_0=p^g-du$. If $w_0=0$, then $u$ divides $p^g$, so $u=p^j$ with $0\le j\le g$ and $d=p^{g-j}$; since $1\le d\le p-1$, $j=g$ and $u=p^g$. Conversely, if $u=p^g$ then $d=1$ and $w_0=0$. In that case $w_0=0\le(p-1)K$ and the $p$-state $(K,0)$ is successful, so $a\in\mathcal{A}_p$ by Theorem~\ref{thm:primestep}; and $u=p^g$ is $K=(p^g-p)/(p-1)$, the integer of Theorem~\ref{thm:primefamilies}(1). Conversely, for $g\ge1$ and $K=(p^g-p)/(p-1)$, $c_p(p^K)=p^{K+g-1}$ by Theorem~\ref{thm:primefamilies}(1), so by Theorem~\ref{thm:primes} the exponent $K+g-1$ has the candidate $K$ and $g=g(K)$; and $u=p^g$ gives $w_0=0$.
+\end{proof}
+
+Table~\ref{tab:scope} lists, for each result on $c$, the corresponding result on $c_p$. For a general prime, the exponents classified completely are those decided before the first step of the recursion of Theorem~\ref{thm:primestep}(2): the exponents without candidate (Theorem~\ref{thm:primes}(3)), the exponents with $w_0=0$ (Proposition~\ref{prop:primezero}) and the immediate failures (Theorem~\ref{thm:immediate}). The classification of the exponents decided in exactly one step (Theorem~\ref{thm:firststep}(2) and~(3)), the forest of Theorem~\ref{thm:forest} and the families of Theorem~\ref{thm:symfamilies} are proved for $p=2$ only.
+
+\begin{table}[H]
+\centering
+\caption{The results for $p=2$ and the corresponding results for an arbitrary prime $p$.}
+\label{tab:scope}
+\begin{tabular}{lll}
+\toprule
+Result & $p=2$ & arbitrary prime $p$\\
+\midrule
+digit formula & Lemma~\ref{lem:cformula} & Lemma~\ref{lem:cp}(3)\\
+reduction to digit sums & Theorem~\ref{thm:equiv} & Theorem~\ref{thm:primes}(1)\\
+unique candidate, exponents without candidate & Theorem~\ref{thm:leading} & Theorem~\ref{thm:primes}(3)\\
+recursion & Theorem~\ref{thm:step} & Theorem~\ref{thm:primestep}\\
+exponents accepted without any step & Theorem~\ref{thm:firststep}(1) & Proposition~\ref{prop:primezero}\\
+immediate failures & none (Theorem~\ref{thm:immediate}) & Theorem~\ref{thm:immediate}\\
+exponents decided in exactly one step & Theorem~\ref{thm:firststep}(2), (3) & not treated\\
+forest of the states & Theorem~\ref{thm:forest} & not treated\\
+symmetry of the successful states & Proposition~\ref{prop:symmetry} & Theorem~\ref{thm:primebottomup}(4)\\
+bottom-up recursion & Theorem~\ref{thm:bottomup} & Theorem~\ref{thm:primebottomup}(1)--(3)\\
+explicit families & Theorems~\ref{thm:members}, \ref{thm:nonmembers}, \ref{thm:symfamilies} & Theorem~\ref{thm:primefamilies}\\
+lower bounds for the counting functions & Theorems~\ref{thm:counting}, \ref{thm:counting2} & Theorem~\ref{thm:primefamilies} ($p$ odd)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experiments}
+\label{sec:experiments}
+All computations of this section were made by the script \texttt{powers\_of\_two\_c.py}, which was written with Claude Opus 5.5 and run by the author. The script uses exact integer arithmetic only. It requires Python~3.12 and the Python package NumPy; the run reported here used Python~3.12.3 and NumPy~2.4.6. NumPy is used only for the sets $S_J$ (Sections~\ref{subsec:states-exp}--\ref{subsec:bottomup-exp}); without it the script runs in pure Python with $J\le8192$ and $J\le16384$ for the two recursions. The run reported here is obtained with the command \texttt{python powers\_of\_two\_c.py --xmax 20000 --jmax2 262144 --pxmax 6000 --primes 3,5,7,11 --kmax 20000}; the script writes its output, from which the tables of this section are taken, to the file \texttt{results\_powers\_of\_two\_c.txt}. The whole run took $415.6$ seconds. The script performs $145$ checks, each of which prints a line with the result, and all of them passed.
+
+\paragraph{Parameters} The parameters of the run are: $2^{20}$ for the range of the check of Lemma~\ref{lem:cformula}; $2^{24}$ for the brute-force search; $4000$ for the greedy algorithm on big integers; $x\le20000$ for the counting functions; $h\le300$ for the closed-form checks of the families; $h\le18$ for the runs of Algorithm~\ref{alg:membership} on the families; $J\le65536$ for the sets $S_J$ computed with the recursion of Theorem~\ref{thm:step}; $J\le262144$ for the sets $S_J$ computed with the recursion of Theorem~\ref{thm:bottomup}; $a\le6000$ for the recursion of Theorem~\ref{thm:primestep} with the primes $p=3,5,7,11$; $a\le100000$ for the immediate failures; $K\le20000$ for the recursion of Theorem~\ref{thm:primebottomup}; $10^6$ for the confirmation of the families of Nicolas by Algorithm~\ref{alg:membership}; $a\le100000$ for the exponents with $w_0=0$; and $x\le10^5$ for the confirmation of the family exponents of Table~\ref{tab:explicit} by Algorithm~\ref{alg:membership}.
+
+\paragraph{The three methods} The script decides the membership of an exponent $a$ in $\mathcal{A}$ by three independent methods.
+\begin{enumerate}
+\item Brute-force search. The script computes $c(n)$ for $n=1,2,\dots,2^{24}$ from the definition~\eqref{eq:cdef}, by adding $2^{v_2(n)}$ to the running sum, and records every $n$ for which $c(n)$ is a power of $2$. Since $c$ is strictly increasing, this decides the membership of every exponent $a$ with $2^a\le c(2^{24})$. This method uses none of the results of the paper.
+\item Greedy algorithm on big integers. The script starts from $V=2^{a+3}$ and, for $j=a+3,a+2,\dots,1$ in this order, replaces $V$ by $V-j2^j$ whenever $j2^j\le V$; it returns $a\in\mathcal{A}$ if and only if the final value of $V$ is $0$, and in that case the set $T$ of the indices $j$ that were subtracted. By Lemma~\ref{lem:greedy} and Theorem~\ref{thm:equiv} this decides the membership of $a$. This method handles integers of $a+4$ binary digits and uses only Sections~\ref{sec:reformulation} and~\ref{sec:leading} up to Lemma~\ref{lem:greedy}.
+\item Algorithm~\ref{alg:membership}, which handles only integers at most $2K\le2a+6$ in its loop (Corollary~\ref{cor:algo}).
+\end{enumerate}
+The sets $S_J$ are also computed by two independent methods, the recursion of Theorem~\ref{thm:step} (Section~\ref{subsec:states-exp}) and the recursion of Theorem~\ref{thm:bottomup} (Section~\ref{subsec:bottomup-exp}), and for the odd primes the script uses the analogues of the three methods above (Section~\ref{subsec:primes-exp}) and of the two recursions (Section~\ref{subsec:primes2-exp}).
+
+\subsection{Verification of the proved statements}
+\label{subsec:verification}
+The identity~\eqref{eq:cformula} holds for $1\le n\le2^{20}$, the formula $c(2^r)=2^{r-1}(r+2)$ holds for $0\le r<200$, and $c(1),\dots,c(16)$ agree with the table of Section~7 of~\cite{nicolas2005open}. The brute-force search over $1\le n\le2^{24}$ reaches $c(2^{24})=218103808$, so it decides the membership of every exponent $0\le a\le27$. Table~\ref{tab:brute} lists the exponents found, with the integer $n$ such that $c(n)=2^a$. For all $0\le a\le27$, the brute-force search, the big-integer greedy algorithm and Algorithm~\ref{alg:membership} return the same answer, and for the exponents in $\mathcal{A}$ the integer $n=\sum_{j\in T}2^{j-2}$ of Corollary~\ref{cor:algo} equals the integer found by the search.
+
+\begin{table}[H]
+\centering
+\caption{The exponents $0\le a\le27$ with $2^a\in c(\mathbb{N})$, and the integer $n$ with $c(n)=2^a$, found by the brute-force search over $n\le2^{24}$. The other exponents $a\le27$ are $1,4,6,7,9,18,21,23,24,26,27$.}
+\label{tab:brute}
+\begin{tabular}{rrrrrrrr}
+\toprule
+$a$ & $n$ & $a$ & $n$ & $a$ & $n$ & $a$ & $n$\\
+\midrule
+$0$ & $1$ & $10$ & $255$ & $14$ & $2624$ & $19$ & $65535$\\
+$2$ & $3$ & $11$ & $447$ & $15$ & $4864$ & $20$ & $122111$\\
+$3$ & $4$ & $12$ & $768$ & $16$ & $8960$ & $22$ & $433407$\\
+$5$ & $15$ & $13$ & $1471$ & $17$ & $16384$ & $25$ & $3023616$\\
+$8$ & $64$ & & & & & &\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $0\le a\le4000$, Algorithm~\ref{alg:membership} and the big-integer greedy algorithm return the same answer, the set $T$ produced by Algorithm~\ref{alg:membership} is the set produced by the greedy algorithm, and for the exponents $a\le1500$ in $\mathcal{A}$ the integer $n$ of Corollary~\ref{cor:algo} satisfies $c(n)=2^a$. The values $3\le b\le5000$ not taken by $\beta$ are $4,7,12,21,38,71,136,265,522,1035,2060,4109$, that is $2^r+r+1$ for $1\le r\le12$, as stated in Theorem~\ref{thm:leading}, and $0\le2^h-K\le K-2$ holds for $2\le K<2^{16}$. For $0\le a\le20000$, Algorithm~\ref{alg:membership} performs at most $K-2$ iterations and handles integers at most $2K$ in its loop, as stated in Corollary~\ref{cor:algo}; the largest number of iterations is $19781$.
+
+For Theorem~\ref{thm:members}(2), the $295$ pairs $(k,h)$ with $h\le300$ give integers $K$ with $2^{h-1}<K<2^h$, $K-s\ge2$ and $K(2^s+1)-s=2^{h+s}$, which is the identity used in the proof of~\eqref{eq:member}; the equality~\eqref{eq:member} itself was evaluated with Lemma~\ref{lem:cformula} for $h\le16$. For Theorem~\ref{thm:nonmembers}, the $310$ pairs $(s,h)$ with $h\le300$ give integers $K$ with $2^{h-1}<K<2^h$, the least $\sigma$ of Theorem~\ref{thm:step} equals $s$, and $2^{s-1}w+s=J+1$. Table~\ref{tab:families} lists the pairs with $h\le18$; on each of them Algorithm~\ref{alg:membership} returns the answer of the theorem, a member for Theorem~\ref{thm:members} and a failure at the first iteration for Theorem~\ref{thm:nonmembers}, and the big-integer greedy algorithm agrees for $a\le4000$. The exponents $a+(2^a-11)/3$ for odd $3\le a\le15$ are in $\mathcal{A}$, the exponents $a+(2^a-10)/3$ for even $4\le a\le14$ are not, and the exponents $2^r+r-2$, $1\le r<40$, have no candidate $K$.
+
+\begin{table}[H]
+\centering
+\caption{The families of Theorems~\ref{thm:members}(2) and~\ref{thm:nonmembers} with $h\le18$: the parameter $s$, the integer $K$ and the exponent $a=K+h-3$.}
+\label{tab:families}
+\begin{tabular}{rrrr@{\qquad}rrrr}
+\toprule
+\multicolumn{4}{c}{Members (Theorem~\ref{thm:members})} & \multicolumn{4}{c}{Non-members (Theorem~\ref{thm:nonmembers})}\\
+$s$ & $h$ & $K$ & $a$ & $s$ & $h$ & $K$ & $a$\\
+\midrule
+$1$ & $2$ & $3$ & $2$ & $2$ & $3$ & $6$ & $6$\\
+$1$ & $4$ & $11$ & $12$ & $2$ & $5$ & $22$ & $24$\\
+$1$ & $6$ & $43$ & $46$ & $2$ & $7$ & $86$ & $90$\\
+$1$ & $8$ & $171$ & $176$ & $2$ & $9$ & $342$ & $348$\\
+$1$ & $10$ & $683$ & $690$ & $2$ & $11$ & $1366$ & $1374$\\
+$1$ & $12$ & $2731$ & $2740$ & $2$ & $13$ & $5462$ & $5472$\\
+$1$ & $14$ & $10923$ & $10934$ & $2$ & $15$ & $21846$ & $21858$\\
+$1$ & $16$ & $43691$ & $43704$ & $2$ & $17$ & $87382$ & $87396$\\
+$1$ & $18$ & $174763$ & $174778$ & $4$ & $8$ & $228$ & $233$\\
+$2$ & $5$ & $26$ & $28$ & $4$ & $14$ & $14564$ & $14575$\\
+$2$ & $9$ & $410$ & $416$ & $8$ & $17$ & $130056$ & $130070$\\
+$2$ & $13$ & $6554$ & $6564$ & $3$ & $3$ & $7$ & $7$\\
+$2$ & $17$ & $104858$ & $104872$ & $3$ & $7$ & $103$ & $107$\\
+$4$ & $10$ & $964$ & $971$ & $3$ & $11$ & $1639$ & $1647$\\
+$4$ & $18$ & $246724$ & $246739$ & $3$ & $15$ & $26215$ & $26227$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The counting functions}
+\label{subsec:counting-exp}
+Table~\ref{tab:counting} gives $A(x)$ and $B(x)$ for $x=1000,2000,\dots,20000$, computed with Algorithm~\ref{alg:membership}. The exponent $a=0$ belongs to $\mathcal{A}$ because $c(1)=1=2^0$, and the number $A(x)-1$ of exponents $1\le a\le x$ in $\mathcal{A}$ coincides with the table of Nicolas~\cite{nicolas2005open} at the ten values $x=1000,\dots,10000$. In the range $x\le20000$ the ratio $A(x)/x$ takes values between $0.5132$, at $x=6000$, and $0.7418$, at $x=20000$, and $B(x)$ increases by $42$ between $x=15000$ and $x=20000$.
+
+\begin{table}[H]
+\centering
+\caption{The counting functions $A(x)$ and $B(x)$ of~\eqref{eq:Adef}, and the values of the table of Nicolas~\cite{nicolas2005open}, which count the exponents $1\le a\le x$.}
+\label{tab:counting}
+\begin{tabular}{rrrrr@{\qquad}rrrr}
+\toprule
+$x$ & $A(x)$ & $B(x)$ & $A(x)/x$ & Nicolas & $x$ & $A(x)$ & $B(x)$ & $A(x)/x$\\
+\midrule
+$1000$ & $636$ & $365$ & $0.6360$ & $635$ & $11000$ & $6664$ & $4337$ & $0.6058$\\
+$2000$ & $1375$ & $626$ & $0.6875$ & $1374$ & $12000$ & $7332$ & $4669$ & $0.6110$\\
+$3000$ & $1788$ & $1213$ & $0.5960$ & $1787$ & $13000$ & $8133$ & $4868$ & $0.6256$\\
+$4000$ & $2406$ & $1595$ & $0.6015$ & $2405$ & $14000$ & $8939$ & $5062$ & $0.6385$\\
+$5000$ & $2749$ & $2252$ & $0.5498$ & $2748$ & $15000$ & $9878$ & $5123$ & $0.6585$\\
+$6000$ & $3079$ & $2922$ & $0.5132$ & $3078$ & $16000$ & $10867$ & $5134$ & $0.6792$\\
+$7000$ & $3647$ & $3354$ & $0.5210$ & $3646$ & $17000$ & $11855$ & $5146$ & $0.6974$\\
+$8000$ & $4381$ & $3620$ & $0.5476$ & $4380$ & $18000$ & $12847$ & $5154$ & $0.7137$\\
+$9000$ & $5228$ & $3773$ & $0.5809$ & $5227$ & $19000$ & $13842$ & $5159$ & $0.7285$\\
+$10000$ & $5964$ & $4037$ & $0.5964$ & $5963$ & $20000$ & $14836$ & $5165$ & $0.7418$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Among the $5165$ exponents $0\le a\le20000$ outside $\mathcal{A}$, $14$ have no candidate $K$ (the exponents $2^r+r-2$, $1\le r\le14$), $11$ are rejected by Algorithm~\ref{alg:membership} at its first iteration, and $5140$ at a later iteration. The script checks that the $11$ exponents rejected at the first iteration are exactly the $11$ exponents $a\le20000$ given by Theorem~\ref{thm:nonmembers}, all listed in Table~\ref{tab:families}: $6,24,90,348,1374,5472$ ($s=2$), $233,14575$ ($s=4$) and $7,107,1647$ ($s=3$). It also checks that the $14$ exponents $a\le20000$ in $\mathcal{A}$ decided without any iteration, $0,3,8,17,34,67,132,261,518,1031,2056,4105,8202,16395$, are exactly those of Theorem~\ref{thm:members}(1), and that the $11$ exponents $a\le20000$ in $\mathcal{A}$ decided after exactly one iteration, $2,12,28,46,176,416,690,971,2740,6564,10934$, are exactly those of Theorem~\ref{thm:members}(2). These three checks confirm Theorem~\ref{thm:firststep} for $a\le20000$.
+
+Table~\ref{tab:iterations} gives the number of iterations of Algorithm~\ref{alg:membership} for the $19987$ exponents $0\le a\le20000$ that have a candidate $K$. Among them, $14751$ members and $5072$ non-members require at least $10$ iterations, that is $99.2\%$ of them, and the largest number of iterations is $19781$.
+
+\begin{table}[H]
+\centering
+\caption{Number of iterations of Algorithm~\ref{alg:membership} for the exponents $0\le a\le20000$ with a candidate $K$; the last row counts the exponents with at least $10$ iterations.}
+\label{tab:iterations}
+\begin{tabular}{rrr@{\qquad}rrr}
+\toprule
+iterations & members & non-members & iterations & members & non-members\\
+\midrule
+$0$ & $14$ & $0$ & $5$ & $6$ & $8$\\
+$1$ & $11$ & $11$ & $6$ & $8$ & $8$\\
+$2$ & $7$ & $9$ & $7$ & $12$ & $9$\\
+$3$ & $6$ & $4$ & $8$ & $7$ & $10$\\
+$4$ & $9$ & $10$ & $9$ & $5$ & $10$\\
+ & & & $\ge10$ & $14751$ & $5072$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:blocks} gives, for each $h\le14$, the number of candidates $K\in(2^{h-1},2^h]$, which is $2^{h-1}$, and the number of them for which $\beta(K)-3\in\mathcal{A}$. For $5\le h\le14$ the proportion takes values between $0.5000$, at $h=6$, and $0.8198$, at $h=14$.
+
+\begin{table}[H]
+\centering
+\caption{Candidates $K\in(2^{h-1},2^h]$ and the number of them with $\beta(K)-3\in\mathcal{A}$.}
+\label{tab:blocks}
+\begin{tabular}{rrrr@{\qquad}rrrr}
+\toprule
+$h$ & candidates & members & proportion & $h$ & candidates & members & proportion\\
+\midrule
+$1$ & $1$ & $1$ & $1.0000$ & $8$ & $128$ & $103$ & $0.8047$\\
+$2$ & $2$ & $2$ & $1.0000$ & $9$ & $256$ & $192$ & $0.7500$\\
+$3$ & $4$ & $2$ & $0.5000$ & $10$ & $512$ & $277$ & $0.5410$\\
+$4$ & $8$ & $8$ & $1.0000$ & $11$ & $1024$ & $744$ & $0.7266$\\
+$5$ & $16$ & $10$ & $0.6250$ & $12$ & $2048$ & $1054$ & $0.5146$\\
+$6$ & $32$ & $16$ & $0.5000$ & $13$ & $4096$ & $2087$ & $0.5095$\\
+$7$ & $64$ & $45$ & $0.7031$ & $14$ & $8192$ & $6716$ & $0.8198$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The bounds of Theorem~\ref{thm:counting}}
+\label{subsec:bounds-exp}
+Table~\ref{tab:bounds} compares, for $H=\lfloor\log_2x\rfloor-1$, the number of exponents produced by the families in the proof of Theorem~\ref{thm:counting} with the explicit lower bound $2H-\log_2H-3$ for the members, and with $A(x)$ and $B(x)$ when $x\le20000$. For every $x$ of the table the family exponents are at most $x$, the member and non-member families are disjoint, the number of member exponents is at least $2H-\log_2H-3$, and for $x\le20000$ every member exponent is in $\mathcal{A}$ and every non-member exponent is not. For $x\le10000$ the families account for at most $21$ of the $A(x)$ members and $21$ of the $B(x)$ non-members.
+
+\begin{table}[H]
+\centering
+\caption{Number of family exponents up to $x$ (members of Theorem~\ref{thm:members}, non-members of Theorems~\ref{thm:leading} and~\ref{thm:nonmembers}), the bound $2H-\log_2H-3$ of the proof of Theorem~\ref{thm:counting}, and the exact $A(x)$ and $B(x)$ for $x\le10000$.}
+\label{tab:bounds}
+\begin{tabular}{rrrrrrr}
+\toprule
+$x$ & $H$ & members (families) & $2H-\log_2H-3$ & $A(x)$ & non-members (families) & $B(x)$\\
+\midrule
+$16$ & $3$ & $4$ & $1.42$ & $12$ & $5$ & $5$\\
+$64$ & $5$ & $8$ & $4.68$ & $38$ & $8$ & $27$\\
+$256$ & $7$ & $11$ & $8.19$ & $182$ & $12$ & $75$\\
+$1000$ & $8$ & $13$ & $10.00$ & $636$ & $14$ & $365$\\
+$4096$ & $11$ & $19$ & $15.54$ & $2449$ & $20$ & $1648$\\
+$10000$ & $12$ & $21$ & $17.42$ & $5964$ & $21$ & $4037$\\
+$65536$ & $15$ & $26$ & $23.09$ & -- & $28$ & --\\
+$10^{6}$ & $18$ & $33$ & $28.83$ & -- & $33$ & --\\
+$10^{9}$ & $28$ & $52$ & $48.19$ & -- & $53$ & --\\
+$10^{12}$ & $38$ & $73$ & $67.75$ & -- & $74$ & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The successful states}
+\label{subsec:states-exp}
+The script computes the sets $S_J$ for all $J\le65536$, row by row, from Theorem~\ref{thm:step}: $w\in S_J$ if and only if $w=0$, or the iteration from $(J,w)$ does not fail and its result $(J-s,w')$ satisfies $w'\in S_{J-s}$. The values of $N(J)$ obtained in this way agree with Algorithm~\ref{alg:membership} for $J<200$ and for ten random $J$ in $[200,1500]$, and Algorithm~\ref{alg:membership} agrees with the big-integer greedy algorithm on all states with $J<120$. The symmetry of Proposition~\ref{prop:symmetry} holds for every $J\le65536$. The values of $N(J)$ printed by the script, for $J\le64$ and near each power of $2$ up to $2^{16}$, satisfy Proposition~\ref{prop:Npairs}. Table~\ref{tab:NJ} gives the extreme and mean values of $N(J)/J$ on the dyadic ranges. The integers $J\le65536$ with $N(J)=J$, that is with every state successful, are $1,2,4,12,16,17356,17360,17376,17632$.
+
+\begin{table}[H]
+\centering
+\caption{The minimum, maximum and mean of $N(J)/J$ for $2^m\le J<2^{m+1}$, $0\le m\le15$, with the integers $J$ where the minimum and maximum are attained.}
+\label{tab:NJ}
+\begin{tabular}{rrrrrr}
+\toprule
+$m$ & $\min N(J)/J$ & at $J$ & $\max N(J)/J$ & at $J$ & mean $N(J)/J$\\
+\midrule
+$0$ & $1.0000$ & $1$ & $1.0000$ & $1$ & $1.0000$\\
+$1$ & $0.6667$ & $3$ & $1.0000$ & $2$ & $0.8333$\\
+$2$ & $0.5714$ & $7$ & $1.0000$ & $4$ & $0.7595$\\
+$3$ & $0.4444$ & $9$ & $1.0000$ & $12$ & $0.7565$\\
+$4$ & $0.5161$ & $31$ & $1.0000$ & $16$ & $0.7090$\\
+$5$ & $0.4364$ & $55$ & $0.9412$ & $34$ & $0.6160$\\
+$6$ & $0.4507$ & $71$ & $0.9355$ & $124$ & $0.7170$\\
+$7$ & $0.5561$ & $187$ & $0.9846$ & $130$ & $0.8218$\\
+$8$ & $0.5727$ & $447$ & $0.9927$ & $274$ & $0.7646$\\
+$9$ & $0.2976$ & $699$ & $0.7489$ & $876$ & $0.5527$\\
+$10$ & $0.3962$ & $2019$ & $0.9245$ & $1298$ & $0.7189$\\
+$11$ & $0.2440$ & $2787$ & $0.7865$ & $3260$ & $0.5317$\\
+$12$ & $0.1846$ & $5027$ & $0.8713$ & $8098$ & $0.5086$\\
+$13$ & $0.5205$ & $9899$ & $0.9999$ & $15362$ & $0.8212$\\
+$14$ & $0.8215$ & $26105$ & $1.0000$ & $17632$ & $0.9672$\\
+$15$ & $0.7311$ & $39643$ & $0.9937$ & $51332$ & $0.8992$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+By Proposition~\ref{prop:Ncount}(2), the sets $S_J$ give the members of $\mathcal{A}$ with candidate $K\le65537$, hence $A(x)$ for $x\le65551=\beta(65537)-3$. The value $A(20000)=14836$ obtained in this way agrees with Section~\ref{subsec:counting-exp}. Table~\ref{tab:blocks16} gives, for $h\le16$, the proportion of members among the candidates $K\in(2^{h-1},2^h]$ and the mean of $N(K-1)/(K-1)$ over the same $K$; for $7\le h\le16$ the two numbers differ by at most $0.0171$. Table~\ref{tab:counting65} gives $A(x)$ for $x=25000,30000,\dots,65000$. For $x=1000,2000,\dots,65000$, the ratio $A(x)/x$ takes values between $0.5132$, at $x=6000$, and $0.8654$, at $x=62000$.
+
+\begin{table}[H]
+\centering
+\caption{Members among the candidates $K\in(2^{h-1},2^h]$, and the mean of $N(J)/J$ over $J=K-1$ for the same $K$.}
+\label{tab:blocks16}
+\begin{tabular}{rrrrr@{\qquad}rrrrr}
+\toprule
+$h$ & candidates & members & proportion & mean $N/J$ & $h$ & candidates & members & proportion & mean $N/J$\\
+\midrule
+$1$ & $1$ & $1$ & $1.0000$ & $1.0000$ & $9$ & $256$ & $192$ & $0.7500$ & $0.7646$\\
+$2$ & $2$ & $2$ & $1.0000$ & $0.8333$ & $10$ & $512$ & $277$ & $0.5410$ & $0.5527$\\
+$3$ & $4$ & $2$ & $0.5000$ & $0.7595$ & $11$ & $1024$ & $744$ & $0.7266$ & $0.7189$\\
+$4$ & $8$ & $8$ & $1.0000$ & $0.7565$ & $12$ & $2048$ & $1054$ & $0.5146$ & $0.5317$\\
+$5$ & $16$ & $10$ & $0.6250$ & $0.7090$ & $13$ & $4096$ & $2087$ & $0.5095$ & $0.5086$\\
+$6$ & $32$ & $16$ & $0.5000$ & $0.6160$ & $14$ & $8192$ & $6716$ & $0.8198$ & $0.8212$\\
+$7$ & $64$ & $45$ & $0.7031$ & $0.7170$ & $15$ & $16384$ & $15878$ & $0.9691$ & $0.9672$\\
+$8$ & $128$ & $103$ & $0.8047$ & $0.8218$ & $16$ & $32768$ & $29503$ & $0.9004$ & $0.8992$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{The counting function $A(x)$ for $25000\le x\le65000$, obtained from the sets $S_J$.}
+\label{tab:counting65}
+\begin{tabular}{rrr@{\qquad}rrr}
+\toprule
+$x$ & $A(x)$ & $A(x)/x$ & $x$ & $A(x)$ & $A(x)/x$\\
+\midrule
+$25000$ & $19692$ & $0.7877$ & $50000$ & $42335$ & $0.8467$\\
+$30000$ & $24433$ & $0.8144$ & $55000$ & $47180$ & $0.8578$\\
+$35000$ & $29021$ & $0.8292$ & $60000$ & $51819$ & $0.8637$\\
+$40000$ & $33160$ & $0.8290$ & $65000$ & $56153$ & $0.8639$\\
+$45000$ & $37737$ & $0.8386$ & & &\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The forest of states}
+\label{subsec:forest-exp}
+The script checks Theorem~\ref{thm:forest} as follows. The number $F(J)$ of failing states obtained from the rows equals the number given by part (1) for every $J\le65536$, and the largest value of $F(J)$ in this range is $3$. The sum $\sum_{J\le L}F(J)$ equals $\sum_{\sigma=2}^{L}\lfloor(L+1-\sigma)/2^{\sigma-1}\rfloor$ for $L=10,100,1000,10000,65536$, with the values $6,94,991,9991,65519$. Every state $(J',w')$ with $J'\le600$ has exactly $v_2(J'+1+w')$ preimages under $\Phi$, counted by applying $\Phi$ to all states of levels up to $613$, and the recursion of part (3) for $N(J)$ holds for $J\le1200$.
+
+The script labels every state by the root of its tree and counts, at the levels $J=2^m$, $5\le m\le16$, the number of distinct trees among the $J$ states of the level and the shares of the largest trees (Table~\ref{tab:trees}). At each of these levels the largest tree is the tree of the root $(1,0)$, and its share equals $N(J)/(2J)$, as stated by Proposition~\ref{prop:roots}. At the level $J=65536$, the ten largest trees are those of the roots $(1,0)$, $(47321,0)$, $(51081,0)$, $(47257,0)$ and $(9631,0)$, with $29090$, $16376$, $6838$, $2810$ and $1962$ states, and those of the failing states of the levels $61364$ ($s=5$), $61361$ ($s=2$), $52582$ ($s=3$), $52581$ ($s=2$) and $56327$ ($s=8$), with $1614$, $1614$, $1578$, $1578$ and $386$ states.
+
+\begin{table}[H]
+\centering
+\caption{The trees of the forest at the levels $J=2^m$: the number of distinct trees among the $J$ states of the level, the proportion $N(J)/J$ of successful states, and the shares of the largest tree, which is the tree of $(1,0)$ at every level, and of the $5$ and $10$ largest trees.}
+\label{tab:trees}
+\begin{tabular}{rrrrrr}
+\toprule
+$J$ & trees & $N(J)/J$ & tree of $(1,0)$ & $5$ largest & $10$ largest\\
+\midrule
+$32$ & $8$ & $0.6250$ & $0.3125$ & $0.8750$ & $1.0000$\\
+$64$ & $12$ & $0.5625$ & $0.2812$ & $0.7188$ & $0.9688$\\
+$128$ & $9$ & $0.9375$ & $0.4688$ & $0.9531$ & $1.0000$\\
+$256$ & $15$ & $0.8438$ & $0.4219$ & $0.8047$ & $0.9531$\\
+$512$ & $17$ & $0.7422$ & $0.3711$ & $0.7188$ & $0.9102$\\
+$1024$ & $20$ & $0.5469$ & $0.2734$ & $0.7422$ & $0.9355$\\
+$2048$ & $21$ & $0.5293$ & $0.2646$ & $0.7783$ & $0.9521$\\
+$4096$ & $25$ & $0.4668$ & $0.2334$ & $0.6982$ & $0.8931$\\
+$8192$ & $22$ & $0.8335$ & $0.4167$ & $0.7751$ & $0.9609$\\
+$16384$ & $17$ & $0.9868$ & $0.4934$ & $0.9744$ & $0.9945$\\
+$32768$ & $19$ & $0.9535$ & $0.4767$ & $0.9462$ & $0.9908$\\
+$65536$ & $27$ & $0.8878$ & $0.4439$ & $0.8709$ & $0.9742$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The bottom-up recursion}
+\label{subsec:bottomup-exp}
+The script computes $S_J$ for $J\le262144$ with Theorem~\ref{thm:bottomup}, in $139.7$ seconds. The sets obtained coincide with those of Section~\ref{subsec:states-exp} for every $J\le3000$; the values of $N(J)$ coincide for $J\le65536$, and so does the membership of every initial state with $K\le65537$. For every $J\le262144$, $S_J$ is symmetric, $S_J$ has period $J/2$ when $J$ is even, $N(2k+1)=N(2k)$, and $4\mid N(J)$ when $J\ge4$. For the block $h=17$, the proportion of members among the $65536$ candidates is $56692/65536=0.8651$, and the mean of $N(K-1)/(K-1)$ over the block is $0.8652$. On the range $2^{16}\le J<2^{17}$, $N(J)/J$ takes values between $0.6683$, at $J=70695$, and $0.9996$, at $J=95306$, with mean $0.8652$. For the block $h=18$, the proportion of members among the $131072$ candidates is $92026/131072=0.7021$, and the mean of $N(K-1)/(K-1)$ over the block is $0.7028$. On the range $2^{17}\le J<2^{18}$, $N(J)/J$ takes values between $0.5114$, at $J=220351$, and $0.9414$, at $J=178820$, with mean $0.7028$. Table~\ref{tab:counting131} gives $A(x)$ for $70000\le x\le260000$; the value $A(65000)=56153$ coincides with Table~\ref{tab:counting65}. For $x=1000,2000,\dots,262000$, the ratio $A(x)/x$ takes values between $0.5132$, at $x=6000$, and $0.8750$, at $x=109000$.
+
+\begin{table}[H]
+\centering
+\caption{The counting function $A(x)$ for $70000\le x\le260000$, obtained from the recursion of Theorem~\ref{thm:bottomup}.}
+\label{tab:counting131}
+\begin{tabular}{rrr@{\qquad}rrr@{\qquad}rrr}
+\toprule
+$x$ & $A(x)$ & $A(x)/x$ & $x$ & $A(x)$ & $A(x)/x$ & $x$ & $A(x)$ & $A(x)/x$\\
+\midrule
+$70000$ & $60188$ & $0.8598$ & $135000$ & $116407$ & $0.8623$ & $200000$ & $165994$ & $0.8300$\\
+$75000$ & $63912$ & $0.8522$ & $140000$ & $120170$ & $0.8584$ & $205000$ & $169363$ & $0.8262$\\
+$80000$ & $68038$ & $0.8505$ & $145000$ & $123607$ & $0.8525$ & $210000$ & $172608$ & $0.8219$\\
+$85000$ & $72221$ & $0.8497$ & $150000$ & $126717$ & $0.8448$ & $215000$ & $175779$ & $0.8176$\\
+$90000$ & $76886$ & $0.8543$ & $155000$ & $129737$ & $0.8370$ & $220000$ & $178735$ & $0.8124$\\
+$95000$ & $81814$ & $0.8612$ & $160000$ & $133227$ & $0.8327$ & $225000$ & $181754$ & $0.8078$\\
+$100000$ & $86767$ & $0.8677$ & $165000$ & $137230$ & $0.8317$ & $230000$ & $185060$ & $0.8046$\\
+$105000$ & $91604$ & $0.8724$ & $170000$ & $141392$ & $0.8317$ & $235000$ & $188478$ & $0.8020$\\
+$110000$ & $96233$ & $0.8748$ & $175000$ & $145643$ & $0.8322$ & $240000$ & $191731$ & $0.7989$\\
+$115000$ & $100429$ & $0.8733$ & $180000$ & $150193$ & $0.8344$ & $245000$ & $194655$ & $0.7945$\\
+$120000$ & $104238$ & $0.8687$ & $185000$ & $154549$ & $0.8354$ & $250000$ & $197533$ & $0.7901$\\
+$125000$ & $108240$ & $0.8659$ & $190000$ & $158583$ & $0.8346$ & $255000$ & $200792$ & $0.7874$\\
+$130000$ & $112452$ & $0.8650$ & $195000$ & $162450$ & $0.8331$ & $260000$ & $204011$ & $0.7847$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The families of Theorem~\ref{thm:symfamilies}}
+\label{subsec:symfam-exp}
+The formula $c(2^{2^r}-1)=2^{2^r+r-1}$ holds for $0\le r\le12$. For $h\le300$, Theorem~\ref{thm:symfamilies}(2) gives $282$ pairs $(i,h)$ and Theorem~\ref{thm:symfamilies}(3) gives $222$ pairs $(i,h)$; for all of them $w$ is an even positive integer and $2^{h-1}+1<K<2^h$. Every exponent of parts (1) and (2) at most $262161=\beta(262145)-3$ is in $\mathcal{A}$, every exponent of part (3) in this range is not, according to the sets $S_J$ of Section~\ref{subsec:bottomup-exp}, and the big-integer greedy algorithm agrees for $a\le4000$. Table~\ref{tab:symfam} lists the exponents of parts (2) and (3) with $h\le18$.
+
+\begin{table}[H]
+\centering
+\caption{The exponents $a=K+h-3$ of Theorem~\ref{thm:symfamilies}(2) (members) and~(3) (non-members) with $h\le18$, with $\sigma=2^{i-1}+1$.}
+\label{tab:symfam}
+\begin{tabular}{rrrrr@{\qquad}rrrrr}
+\toprule
+\multicolumn{5}{c}{Members, part (2)} & \multicolumn{5}{c}{Non-members, part (3)}\\
+$i$ & $\sigma$ & $h$ & $K$ & $a$ & $i$ & $\sigma$ & $h$ & $K$ & $a$\\
+\midrule
+$1$ & $2$ & $4$ & $10$ & $11$ & $2$ & $3$ & $5$ & $19$ & $21$\\
+$2$ & $3$ & $6$ & $35$ & $38$ & $2$ & $3$ & $8$ & $147$ & $152$\\
+$1$ & $2$ & $7$ & $74$ & $78$ & $3$ & $5$ & $8$ & $133$ & $138$\\
+$3$ & $5$ & $9$ & $261$ & $267$ & $2$ & $3$ & $11$ & $1171$ & $1179$\\
+$1$ & $2$ & $10$ & $586$ & $593$ & $3$ & $5$ & $13$ & $4229$ & $4239$\\
+$2$ & $3$ & $10$ & $547$ & $554$ & $4$ & $9$ & $13$ & $4105$ & $4115$\\
+$1$ & $2$ & $13$ & $4682$ & $4692$ & $2$ & $3$ & $14$ & $9363$ & $9374$\\
+$2$ & $3$ & $14$ & $8739$ & $8750$ & $2$ & $3$ & $17$ & $74899$ & $74913$\\
+$4$ & $9$ & $14$ & $8201$ & $8212$ & $3$ & $5$ & $18$ & $135301$ & $135316$\\
+$3$ & $5$ & $15$ & $16645$ & $16657$ & & & & &\\
+$1$ & $2$ & $16$ & $37450$ & $37463$ & & & & &\\
+$2$ & $3$ & $18$ & $139811$ & $139826$ & & & & &\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:allfam} gives the number of exponents up to $x$ produced by all the families of Theorems~\ref{thm:leading}, \ref{thm:members}, \ref{thm:nonmembers} and~\ref{thm:symfamilies}, with $H=\lfloor\log_2x\rfloor-1$, together with $(3+C_1)H$, $(\frac54+\frac E2+C_2)H$ and, for $x\le100000$, the exact values of $A(x)$ and $B(x)$. For every $x$ of the table, the member and non-member exponents are at most $x$ and disjoint, and for $x\le100000$ every member exponent is in $\mathcal{A}$ and every non-member exponent is not. For comparison, the script counts the exponents of the three families of Nicolas, in the notation of Proposition~\ref{prop:nicolascount}: for the six values $x=10^3,10^4,10^5,10^6,10^9,10^{12}$ of Table~\ref{tab:allfam}, $A_{\mathrm{N}}(x)=5,6,8,10,15,20$, where $\frac12\log_2x=4.98,6.64,8.30,9.97,14.95,19.93$, and $B_{\mathrm{N}}(x)=13,19,24,28,43,58$, where $\frac32\log_2x=14.95,19.93,24.91,29.90,44.85,59.79$; the corresponding numbers of Table~\ref{tab:allfam} are $22,37,49,61,100,139$ members and $17,25,35,42,69,97$ non-members. The script checks that the exponents $2^r+r-2$ have no candidate $K$, that the exponents $a+(2^a-10)/3$, $a\ge4$ even, have one, and that Algorithm~\ref{alg:membership} returns the answer of Nicolas on every exponent of the three families up to $10^6$.
+
+\begin{table}[H]
+\centering
+\caption{Exponents up to $x$ produced by all the explicit families, compared with $(3+C_1)H$ and $(\frac54+\frac E2+C_2)H$ of Theorem~\ref{thm:counting2}, and with $A(x)$ and $B(x)$.}
+\label{tab:allfam}
+\begin{tabular}{rrrrrrrr}
+\toprule
+$x$ & $H$ & members & $(3+C_1)H$ & $A(x)$ & non-members & $(\frac54+\frac E2+C_2)H$ & $B(x)$\\
+\midrule
+$10^3$ & $8$ & $22$ & $31.72$ & $636$ & $17$ & $22.54$ & $365$\\
+$10^4$ & $12$ & $37$ & $47.59$ & $5964$ & $25$ & $33.81$ & $4037$\\
+$10^5$ & $15$ & $49$ & $59.48$ & $86767$ & $35$ & $42.27$ & $13234$\\
+$10^6$ & $18$ & $61$ & $71.38$ & -- & $42$ & $50.72$ & --\\
+$10^9$ & $28$ & $100$ & $111.04$ & -- & $69$ & $78.90$ & --\\
+$10^{12}$ & $38$ & $139$ & $150.69$ & -- & $97$ & $107.08$ & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:explicit} gives the four explicit lower bounds of Theorems~\ref{thm:counting} and~\ref{thm:counting2}, with $H=\lfloor\log_2x\rfloor-1$, together with the numbers of family exponents with $h\le H$ on which they rest. For every $x$ of the table each number of family exponents is at least the corresponding bound, the exponents are at most $x$, and the member and non-member exponents are disjoint; for $x\le10^5$, Algorithm~\ref{alg:membership} confirms every family exponent used. For $x=10^5$ the explicit bounds of Theorem~\ref{thm:counting2} are $37.76$ and $21.55$, the families contain $49$ members and $35$ non-members, and $A(10^5)=86767$, $B(10^5)=13234$.
+
+\begin{table}[H]
+\centering
+\caption{The explicit bounds $b_A=2H-\log_2H-3$ and $b_B=(\frac54+\frac E2)H-\log_2H-5$ of Theorem~\ref{thm:counting}, and $b'_A=(3+C_1)H-3\log_2H-10$ and $b'_B=(\frac54+\frac E2+C_2)H-3\log_2H-9$ of Theorem~\ref{thm:counting2}, with the numbers of member and non-member exponents of the families of Theorem~\ref{thm:counting} (columns 3 and 5) and of all the families (columns 7 and 9).}
+\label{tab:explicit}
+\begin{tabular}{rrrrrrrrrr}
+\toprule
+$x$ & $H$ & members & $b_A$ & non-members & $b_B$ & members & $b'_A$ & non-members & $b'_B$\\
+\midrule
+$16$ & $3$ & $4$ & $1.42$ & $5$ & $-0.42$ & $5$ & $-2.86$ & $5$ & $-5.30$\\
+$64$ & $5$ & $8$ & $4.68$ & $8$ & $2.94$ & $12$ & $2.86$ & $9$ & $-1.88$\\
+$256$ & $7$ & $11$ & $8.19$ & $12$ & $6.57$ & $19$ & $9.34$ & $13$ & $2.30$\\
+$1000$ & $8$ & $13$ & $10.00$ & $14$ & $8.43$ & $22$ & $12.72$ & $17$ & $4.54$\\
+$4096$ & $11$ & $19$ & $15.54$ & $20$ & $14.13$ & $34$ & $23.24$ & $24$ & $11.62$\\
+$10000$ & $12$ & $21$ & $17.42$ & $21$ & $16.06$ & $37$ & $26.83$ & $25$ & $14.06$\\
+$65536$ & $15$ & $26$ & $23.09$ & $28$ & $21.89$ & $49$ & $37.76$ & $35$ & $21.55$\\
+$10^{5}$ & $15$ & $26$ & $23.09$ & $28$ & $21.89$ & $49$ & $37.76$ & $35$ & $21.55$\\
+$10^{6}$ & $18$ & $33$ & $28.83$ & $33$ & $27.79$ & $61$ & $48.87$ & $42$ & $29.21$\\
+$10^{9}$ & $28$ & $52$ & $48.19$ & $53$ & $47.69$ & $100$ & $86.61$ & $69$ & $55.48$\\
+$10^{12}$ & $38$ & $73$ & $67.75$ & $74$ & $67.78$ & $139$ & $124.95$ & $97$ & $82.33$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Odd primes}
+\label{subsec:primes-exp}
+For $p=3,5,7,11$ the script checks Lemma~\ref{lem:cp}(3) for $n\le50000$ and Lemma~\ref{lem:cp}(1) for $pn\le200000$ against the definition of $c_p$, and Proposition~\ref{prop:Fp} for $n\le30$ by computing the product $(1-X)\cdots(1-X^n)$ in $\mathbb{F}_p[X]$ and dividing it by $1-X$ as long as possible. A brute-force search over $n\le200000$ decides the membership of the exponents $a\le13,8,7,5$ for $p=3,5,7,11$; the members found are $0,3,4,6,7,8,9,10,13$ for $p=3$ (with $c_3(n)=3^a$ for $n=1,13,27,215,513,1457,3645,9841,196829$), $0,5,6,8$ for $p=5$, $0,7$ for $p=7$ and $0$ for $p=11$. In these ranges the recursion of Theorem~\ref{thm:primestep} and the greedy algorithm applied to the big integers $p^{a+1}$ and $t_i$ agree with the search, and they agree with each other for $a\le1200$. The exponents $a\le20000$ without candidate are exactly those of Theorem~\ref{thm:primes}(3): $1,5,15,43,125,369,1099,3287,9849$ for $p=3$, $1,7,33,159,785,3911,19537$ for $p=5$, $1,9,59,403,2805,19613$ for $p=7$ and $1,13,135,1467,16109$ for $p=11$. The three parts of Theorem~\ref{thm:primefamilies} are confirmed; part (3) gives the exponents $2,22,186,1646,14770,132870$ for $p=3$, $3,80,1957$ for $p=5$, $4,202,9808$ for $p=7$ and $6,734,88582$ for $p=11$. Table~\ref{tab:primes} gives $A_p(x)$ for $x\le6000$ and the outcomes of the recursion for $a\le6000$.
+
+\begin{table}[H]
+\centering
+\caption{The counting functions $A_p(x)$ for $p=3,5,7,11$, and the outcomes of the recursion of Theorem~\ref{thm:primestep} for $0\le a\le6000$: no candidate, immediate failure, a digit $d>p-1$, a remainder $w'>(p-1)i$, and success.}
+\label{tab:primes}
+\begin{tabular}{rrrrr}
+\toprule
+ & $p=3$ & $p=5$ & $p=7$ & $p=11$\\
+\midrule
+$A_p(500)$ & $381$ & $239$ & $212$ & $215$\\
+$A_p(1000)$ & $733$ & $397$ & $556$ & $397$\\
+$A_p(1500)$ & $1105$ & $616$ & $896$ & $577$\\
+$A_p(2000)$ & $1442$ & $882$ & $1173$ & $804$\\
+$A_p(2500)$ & $1893$ & $1252$ & $1485$ & $1100$\\
+$A_p(3000)$ & $2317$ & $1676$ & $1812$ & $1334$\\
+$A_p(3500)$ & $2675$ & $2063$ & $2074$ & $1524$\\
+$A_p(4000)$ & $3082$ & $2413$ & $2348$ & $1718$\\
+$A_p(4500)$ & $3483$ & $2753$ & $2606$ & $1955$\\
+$A_p(5000)$ & $3879$ & $3012$ & $2858$ & $2221$\\
+$A_p(5500)$ & $4277$ & $3300$ & $3127$ & $2449$\\
+$A_p(6000)$ & $4664$ & $3611$ & $3406$ & $2677$\\
+$A_p(6000)/6000$ & $0.7773$ & $0.6018$ & $0.5677$ & $0.4462$\\
+\midrule
+no candidate & $8$ & $6$ & $5$ & $4$\\
+immediate failure & $4$ & $7$ & $8$ & $11$\\
+digit $d>p-1$ & $675$ & $596$ & $343$ & $370$\\
+remainder $w'>(p-1)i$ & $650$ & $1781$ & $2239$ & $2939$\\
+success & $4664$ & $3611$ & $3406$ & $2677$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $p=3$ the $4$ immediate failures up to $6000$ are the exponents $2,22,186,1646$ of Theorem~\ref{thm:primefamilies}(3), as Theorem~\ref{thm:immediate} states. Grouping the candidates by $g$, the proportion of members is $0.6667$, $0.7778$, $0.7037$, $0.8395$, $0.6626$, $0.7586$, $0.7796$ for $g=2,\dots,8$ when $p=3$; $0.4000$, $0.6400$, $0.5200$, $0.3952$, $0.6474$ for $g=2,\dots,6$ when $p=5$; $0.2857$, $0.6735$, $0.4052$, $0.6318$ for $g=2,\dots,5$ when $p=7$; and $0.1818$, $0.6198$, $0.3681$ for $g=2,3,4$ when $p=11$.
+
+\subsection{Immediate failures and the bottom-up recursion for odd primes}
+\label{subsec:primes2-exp}
+For $a\le100000$, the script determines the immediate failures from the first step of Theorem~\ref{thm:primestep} and compares them with the exponents given by the triples $(g,e,j)$ of Theorem~\ref{thm:immediate}. For $p=2$ there is none. For $p=3,5,7,11$ the two sets coincide; they are listed in Table~\ref{tab:immediate}. For $p=3$ they are the exponents of Theorem~\ref{thm:primefamilies}(3), and for every $p$ and $g$ their number is at most $(p-1)(p-2)$; the largest number for a single $g$ is $1,3,4,6$ for $p=3,5,7,11$.
+
+\begin{table}[H]
+\centering
+\caption{The immediate failures $a\le100000$ (Theorem~\ref{thm:immediate}).}
+\label{tab:immediate}
+\begin{tabular}{rl}
+\toprule
+$p$ & immediate failures $a\le100000$\\
+\midrule
+$2$ & none\\
+$3$ & $2,22,186,1646,14770$\\
+$5$ & $2,3,41,54,80,1306,1957,24420,32558,48834$\\
+$7$ & $2,4,20,82,102,202,3272,4906,6540,9808$\\
+$11$ & $2,3,4,6,20,185,246,368,490,734,3224,19688,25312,29530,44293,59056,88582$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The script computes the sets $S^{(p)}_K$ for $K\le20000$ with Theorem~\ref{thm:primebottomup}, in at most $13.8$ seconds for each prime. For every $K\le20000$ and $p=3,5,7,11$, $S^{(p)}_K$ is symmetric under $w\mapsto(p-1)K-w$, $N_p(K+1)=N_p(K)$ when $p\nmid K$, and $N_p(K+1)=p\,\#\{w\in S^{(p)}_K:\ p\mid w\}$ when $p\mid K$; the members obtained from these sets coincide with those of Theorem~\ref{thm:primestep} for $a\le1500$. Table~\ref{tab:primes10000} gives $A_p(x)$ for $x\le20000$. Table~\ref{tab:primegroups} groups the candidates $K$ by $g=g(K)$ and compares the proportion of members with the mean of $N_p(K)/((p-1)K+1)$, the proportion of successful states, over the same $K$. For every complete group with at least $2000$ candidates, namely $g=8,9$ for $p=3$, $g=6,7$ for $p=5$, $g=5,6$ for $p=7$ and $g=5$ for $p=11$, the two numbers differ by at most $0.0110$.
+
+\begin{table}[H]
+\centering
+\caption{The counting functions $A_p(x)$ for $x\le20000$, obtained from Theorem~\ref{thm:primebottomup}.}
+\label{tab:primes10000}
+\begin{tabular}{rrrrrrrr}
+\toprule
+$x$ & $A_3(x)$ & $A_5(x)$ & $A_7(x)$ & $A_{11}(x)$ & $A_3(x)/x$ & $A_5(x)/x$ & $A_7(x)/x$\\
+\midrule
+$2000$ & $1442$ & $882$ & $1173$ & $804$ & $0.7210$ & $0.4410$ & $0.5865$\\
+$4000$ & $3082$ & $2413$ & $2348$ & $1718$ & $0.7705$ & $0.6032$ & $0.5870$\\
+$6000$ & $4664$ & $3611$ & $3406$ & $2677$ & $0.7773$ & $0.6018$ & $0.5677$\\
+$8000$ & $5684$ & $4866$ & $4764$ & $3576$ & $0.7105$ & $0.6082$ & $0.5955$\\
+$10000$ & $6518$ & $6097$ & $6244$ & $4433$ & $0.6518$ & $0.6097$ & $0.6244$\\
+$12000$ & $7196$ & $7327$ & $7670$ & $5260$ & $0.5997$ & $0.6106$ & $0.6392$\\
+$14000$ & $8166$ & $8712$ & $9035$ & $6162$ & $0.5833$ & $0.6223$ & $0.6454$\\
+$16000$ & $9353$ & $10011$ & $10038$ & $7033$ & $0.5846$ & $0.6257$ & $0.6274$\\
+$18000$ & $10490$ & $11328$ & $11015$ & $7916$ & $0.5828$ & $0.6293$ & $0.6119$\\
+$20000$ & $11757$ & $12576$ & $11997$ & $8787$ & $0.5878$ & $0.6288$ & $0.5998$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Candidates $K$ grouped by $g=g(K)$: number of candidates, proportion of members, and mean of $N_p(K)/((p-1)K+1)$ over the group (complete groups only).}
+\label{tab:primegroups}
+\begin{tabular}{rrrrr@{\qquad}rrrrr}
+\toprule
+$p$ & $g$ & candidates & members & mean density & $p$ & $g$ & candidates & members & mean density\\
+\midrule
+$3$ & $5$ & $81$ & $0.8395$ & $0.7932$ & $5$ & $6$ & $3125$ & $0.6474$ & $0.6513$\\
+$3$ & $6$ & $243$ & $0.6626$ & $0.6559$ & $5$ & $7$ & $15625$ & $0.6357$ & $0.6332$\\
+$3$ & $7$ & $729$ & $0.7586$ & $0.7565$ & $7$ & $4$ & $343$ & $0.4052$ & $0.4243$\\
+$3$ & $8$ & $2187$ & $0.7796$ & $0.7686$ & $7$ & $5$ & $2401$ & $0.6318$ & $0.6319$\\
+$3$ & $9$ & $6561$ & $0.6033$ & $0.6005$ & $7$ & $6$ & $16807$ & $0.6018$ & $0.6085$\\
+$5$ & $4$ & $125$ & $0.5200$ & $0.5304$ & $11$ & $4$ & $1331$ & $0.3681$ & $0.3926$\\
+$5$ & $5$ & $625$ & $0.3952$ & $0.4173$ & $11$ & $5$ & $14641$ & $0.4446$ & $0.4405$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $x=1000,2000,\dots,20000$, the ratio $A_p(x)/x$ takes values between $0.5828$ and $0.7773$ for $p=3$, between $0.3970$ and $0.6293$ for $p=5$, between $0.5560$ and $0.6454$ for $p=7$, and between $0.3970$ and $0.4486$ for $p=11$.
+
+For $a\le100000$ and $p=2,3,5,7,11$, the script determines the exponents with a candidate and $w_0=0$, and compares them with Proposition~\ref{prop:primezero}. For each of these primes, $w_0=0$ holds exactly when $u=p^g$, the exponents found are exactly the exponents $K+g-1$ with $K=(p^g-p)/(p-1)$, and the recursion of Theorem~\ref{thm:primestep} accepts each of them without any step. There are $16$ of them for $p=2$, namely $0,3,8,17,\dots,32780,65549$, the exponents of Theorem~\ref{thm:members}(1); $11$ for $p=3$, namely $0,4,14,42,124,368,1098,3286,9848,29532,88582$; $8$ for $p=5$, namely $0,6,32,158,784,3910,19536,97662$; $6$ for $p=7$, namely $0,8,58,402,2804,19612$; and $5$ for $p=11$, namely $0,12,134,1466,16108$. The equality $c_p(p^K)=p^{K+g-1}$ holds for every $K=(p^g-p)/(p-1)\le3000$, that is for $11,7,5,5,4$ values of $g$ when $p=2,3,5,7,11$.
+
+\section{Conclusion}
+\label{sec:conclusion}
+The identity $c(n)=n+\frac12\sum_{i\in\mathcal{B}(n)}i2^i$ turns the question of Nicolas into the question of which powers of $2$ are sums of distinct terms of the superincreasing sequence $(j2^j)_{j\ge1}$ (Theorem~\ref{thm:equiv}). For every exponent there is at most one possible leading term, and the exponents without one are exactly $2^r+r-2$ (Theorem~\ref{thm:leading}); the remaining exponents are decided by a recursion on pairs of integers bounded by $a+3$ (Theorem~\ref{thm:step}, Corollary~\ref{cor:algo}). The closed formula $c(2^{K-2}+2^{K-s-2})=2^{K+h-3}$ and the failure criterion of Theorem~\ref{thm:step} give infinite explicit families of members and of non-members, which contain the families of Nicolas as the cases $s=1$ and $s=2$ (Theorems~\ref{thm:members} and~\ref{thm:nonmembers}) and are exactly the exponents decided by at most one iteration of the recursion (Theorem~\ref{thm:firststep}), and they give the bounds $A(x)\ge(2+o(1))\log_2x$ and $B(x)\ge(2.0533\ldots+o(1))\log_2x$ (Theorem~\ref{thm:counting}). The experiments of Section~\ref{sec:experiments} confirm these statements by three independent methods, reproduce the table of Nicolas, whose values are the numbers $A(x)-1$ of exponents $1\le a\le x$ in $\mathcal{A}$, and give $A(x)$ for $x\le65000$, with $A(x)/x$ between $0.5132$ and $0.8654$ for $x=1000,2000,\dots,65000$. The successful states satisfy the symmetry $w\mapsto J-1-w$, $N(2k+1)=N(2k)$ and $4\mid N(J)$ (Propositions~\ref{prop:symmetry} and~\ref{prop:Npairs}), and for $7\le h\le16$ the proportion of members among the candidates $K\in(2^{h-1},2^h]$ differs from the mean of $N(K-1)/(K-1)$ by at most $0.0171$. The states form a forest whose roots are the states $(J,0)$ and the failing states, with $v_2(J'+1+w')$ children at each state $(J',w')$ (Theorem~\ref{thm:forest}); exactly half of the successful states of each level lie in the tree of $(1,0)$ (Proposition~\ref{prop:roots}), and at the levels $2^m\le65536$ the ten largest trees contain between $89.31\%$ and $100\%$ of the states of the level. The sets $S_J$ also satisfy a recursion from the smallest elements of $T$ upwards, with period $J/2$ for even $J$ (Theorem~\ref{thm:bottomup}); with this recursion $A(x)$ is computed for $x\le262000$, and $A(x)/x$ lies between $0.5132$ and $0.8750$ for $x=1000,2000,\dots,262000$. The symmetry gives further explicit families and the bounds $A(x)\ge(3.9655\ldots+o(1))\log_2x$ and $B(x)\ge(2.8178\ldots+o(1))\log_2x$ (Theorems~\ref{thm:symfamilies} and~\ref{thm:counting2}). For every prime $p$, the function $c_p(n)=\sum_{k\le n}p^{v_p(k)}$, which counts the factor $1-X$ in $(1-X)\cdots(1-X^n)$ over $\mathbb{F}_p[X]$, admits the same reduction, a unique candidate and a recursion, and for odd $p$ there are infinitely many members and non-members (Theorems~\ref{thm:primes}, \ref{thm:primestep} and~\ref{thm:primefamilies}); the immediate failures, which do not occur for $p=2$, are described completely, and the bottom-up recursion and the symmetry extend to every prime (Theorems~\ref{thm:immediate} and~\ref{thm:primebottomup}). The asymptotic behaviour of $A(x)$ asked for in~\cite{nicolas2005open} is not determined by these results.
+
+\section{Lean Verification}\label{sec:lean}
+The Lean 4 formalization~\cite{vega2026sequencelean} defines $c(n)$ as the sum $\sum_{k=1}^{n}2^{v_2(k)}$, where $v_2(k)$ is the exponent of $2$ in $k$ given by \texttt{padicValNat 2 k} of Mathlib. The set $\mathcal{B}(n)$ of binary exponents is replaced by an arbitrary finite set $S$ of exponents with $n=\sum_{i\in S}2^i$, which exists for every $n$; the set $\mathcal{E}$ is expressed as the sums $\sum_{j\in T}j2^j$ over finite sets $T$ of positive integers. The results below are proved from Mathlib; no result of the literature is taken as a hypothesis. The files \texttt{Challenge.lean} and \texttt{Solution.lean} state and prove the theorems below, and GitHub Actions builds the module and runs the public theorem comparison. Each statement of the paper is matched with its Lean theorem in the namespace \texttt{SequenceNicolas.Public}.
+\begin{itemize}
+\item Introduction: \texttt{c\_double} and \texttt{c\_double\_succ}, the recurrences $c(2n)=2c(n)+n$ and $c(2n+1)=2c(n)+n+1$.
+\item Lemma~\ref{lem:cformula}: \texttt{two\_mul\_c\_pow}, that $2c(2^r)=2^r(r+2)$; \texttt{c\_add\_pow}, that $c(2^a+t)=c(2^a)+c(t)$ for $0\le t<2^a$; \texttt{exists\_pow\_sum}, that every $n$ is a sum of distinct powers of $2$; and \texttt{two\_mul\_c\_sum}, that $2c(n)=2n+\sum_{i\in S}i2^i$ whenever $n=\sum_{i\in S}2^i$, which is the second form of~\eqref{eq:cformula} with $S=\mathcal{B}(n)$.
+\item Theorem~\ref{thm:equiv}: \texttt{eight\_mul\_c}, that $8c(n)=\sum_{i\in S}(i+2)2^{i+2}$ for $n=\sum_{i\in S}2^i$; \texttt{repr\_no\_one}, that $1\notin T$ whenever $T$ consists of positive integers and $\sum_{j\in T}j2^j=2^{a+3}$; and \texttt{equiv\_repr}, that $2^a$ is a value of $c$ if and only if $2^{a+3}=\sum_{j\in T}j2^j$ for a finite set $T$ of positive integers.
+\item Lemma~\ref{lem:sum}: \texttt{sum\_j\_two\_pow}, that $\sum_{j=1}^{J}j2^j+2^{J+1}=J2^{J+1}+2$.
+\item Theorem~\ref{thm:leading}(1): \texttt{leading\_term}. If $T$ consists of positive integers, $K=\max T$ and $\sum_{j\in T}j2^j=2^b$ with $b\ge3$, then $K\ge2$ and there is an integer $g$ with $K\le2^g<2K$ and $b=K+g$, that is $g=\lceil\log_2K\rceil$ and $b=\beta(K)$.
+\item Theorem~\ref{thm:members}(1): \texttt{members\_one}, that $8c(2^{2^r-2})=2^{2^r+r}$ for $r\ge1$.
+\item Theorem~\ref{thm:members}(2): \texttt{members\_two}, that $K(2^s+1)=2^{h+s}+s$ and $s+2\le K$ give $8c(2^{K-2}+2^{K-s-2})=2^{K+h}$, which is~\eqref{eq:member}; and \texttt{members\_two\_bounds}, that the same equation and $s<2^h$ give $2^{h-1}<K<2^h$.
+\end{itemize}
+Lemma~\ref{lem:greedy}, parts (2) and (3) of Theorem~\ref{thm:leading}, the recursion of Theorem~\ref{thm:step}, Theorems~\ref{thm:nonmembers} and~\ref{thm:firststep}, the counting bounds, the results on successful states and on an arbitrary prime, and the computations of Section~\ref{sec:experiments} are not formalized.
+
+\section*{Funding}
+This research did not receive any specific grant from funding agencies in the public, commercial, or not-for-profit sectors.
+
+\section*{Data availability}
+The experiments of Section~\ref{sec:experiments} are reproduced by running the script \texttt{powers\_of\_two\_c.py} with the options \texttt{--xmax 20000 --jmax2 262144 --pxmax 6000 --primes 3,5,7,11 --kmax 20000}, using Python~3.12.3 and NumPy~2.4.6.
+
+\section*{Acknowledgments}
+The author would like to thank Royce Ortiz for his support, which made it possible for the author to have access to the AI tool used in this work. The author used Claude Sonnet 5.5 to assist in deriving the proofs, in writing the Lean 4 formalization, to write the experiment script \texttt{powers\_of\_two\_c.py}, and in preparing this manuscript; the author ran the experiments. After using this tool, the author reviewed and edited the content as needed and takes full responsibility for the content of the publication.
+
+\section*{Conflicts of interest}
+The author declares no conflicts of interest.
+
+\bibliographystyle{plainurl}
+\bibliography{biblio}
+\end{document}

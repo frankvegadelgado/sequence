@@ -1,0 +1,65 @@
+version: v0.4
+project:
+  name: "SequenceNicolas: powers of a prime in the image of summatory valuation functions"
+  description: "Lean 4 formalization of the elementary statements of the paper 'Powers of a Prime in the Image of Summatory Valuation Functions', on the question of Nicolas about the powers of 2 in the image of c(n) = sum_{k=1}^{n} 2^{v_2(k)}. The compared results are: the recurrences c(2n) = 2c(n) + n and c(2n+1) = 2c(n) + n + 1; the formula c(2^r) = 2^(r-1)(r+2) and the additivity c(2^a + t) = c(2^a) + c(t) for t < 2^a of Lemma lem:cformula; the binary formula 2c(n) = 2n + sum i 2^i over the binary exponents of n (formula eq:cformula) and the identity 8c(n) = sum (i+2) 2^(i+2); Theorem thm:equiv, that 2^a is a value of c if and only if 2^(a+3) is a sum of distinct terms j 2^j with j >= 1, with the fact that 1 is not an index of such a sum; the sum of j 2^j for 1 <= j <= J (Lemma lem:sum); the leading term K of a representing set, K >= 2 and a+3 = K + ceil(log_2 K) (Theorem thm:leading (1)); and the closed formulas of the explicit members of Theorem thm:members, c(2^(2^r-2)) = 2^(2^r+r-3) and c(2^(K-2) + 2^(K-s-2)) = 2^(K+h-3) with 2^(h-1) < K < 2^h. Everything is proved from Mathlib. The recursion on states, the explicit non-members, the counting bounds, the forest of successful states, the analogue for an arbitrary prime and the computations are not formalized."
+  authors:
+    - name: "Frank Vega"
+      orcid: "0000-0001-8210-4126"
+      email: "vega.frank@gmail.com"
+      affiliation: "Information Physics Institute"
+  license: "Apache-2.0"
+  responsible_maintainers:
+    - name: "Frank Vega"
+      github: "frankvegadelgado"
+      email: "vega.frank@gmail.com"
+
+classification:
+  arxiv: ["math.NT"]
+  msc: ["11A63", "11A25", "11B83", "11N37"]
+
+paper: paper.tex
+lean_toolchain_file: lean-toolchain
+
+sources:
+  - title: "Powers of a Prime in the Image of Summatory Valuation Functions"
+    type: manuscript
+    relationship: formalizes
+    authors: ["Frank Vega"]
+
+automation:
+  methods:
+    - method: manual
+      notes: "The author states the theorems, writes and edits the paper (with the AI assistance described below), and reviews the formal statements in Challenge.lean."
+    - method: other
+      notes: "Claude (Anthropic) assisted in deriving the proofs, in writing the Lean 4 formalization and in preparing the manuscript; the author reviewed and edited the AI-assisted content. The Lean proofs are checked by the Lean kernel via lake build, and lake comparator verifies Solution.lean against Challenge.lean in GitHub Actions. The fuller account is in the Acknowledgments of the manuscript (doc/paper.tex)."
+
+review:
+  status: "self-assessed"
+  notes: "Checked by the author alone, not independently reviewed. The author reviewed the formal statements in Challenge.lean, the manuscript and the AI-assisted content, as the manuscript states. The mechanical basis is the Lean kernel check (lake build) and the Comparator run of Solution.lean against Challenge.lean in GitHub Actions."
+
+repository:
+  role: substantive-development
+
+related_formalizations: []
+
+main_result:
+  name: equiv_repr
+  paper_theorem: thm:equiv
+  statement: For a >= 0, 2^a is a value of c(n) = sum_{k=1}^{n} 2^{v_2(k)} if and only if 2^(a+3) = sum_{j in T} j 2^j for a finite set T of positive integers.
+  lean_modules: [SequenceNicolas.Core]
+  cited_not_formalized: []
+
+modules:
+  - name: SequenceNicolas.Core
+    path: SequenceNicolas/Core.lean
+    status: formalized
+    notes: "The function c n = sum_{k=1}^{n} 2^{v_2(k)} (padicValNat 2); the recurrences c_double and c_double_succ; Lemma lem:cformula (two_mul_c_pow, c_add_pow, exists_pow_sum, two_mul_c_sum); the identity eight_mul_c used in Theorem thm:equiv; Theorem thm:equiv (repr_no_one, equiv_repr); Lemma lem:sum (sum_j_two_pow); Theorem thm:leading (1) (leading_term); Theorem thm:members (members_one, members_two, members_two_bounds)."
+
+unformalized_in_lean:
+  - Lemma lem:greedy and parts (2) and (3) of Theorem thm:leading (the injectivity of beta, the exponents without candidate, the equivalence with membership of 2^K(2^h - K) in E_{K-1})
+  - The recursion on states (Theorem thm:step, Corollary cor:algo, Lemma lem:least) and Algorithm alg:membership
+  - Lemma lem:order, the explicit non-members (Theorem thm:nonmembers), Theorem thm:firststep and Proposition prop:nicolasfamilies
+  - The counting bounds (Theorems thm:counting and thm:counting2, Proposition prop:nicolascount), which use real-analysis estimates
+  - The successful states, the forest and the bottom-up recursion (Propositions prop:Ncount, prop:symmetry, prop:Npairs, prop:roots, Theorems thm:forest, thm:bottomup, thm:symfamilies)
+  - The analogue for an arbitrary prime (Section sec:primes)
+  - The computations of Section sec:experiments (script experiments/powers_of_two_c.py, output experiments/results_powers_of_two_c.txt)
