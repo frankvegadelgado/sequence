@@ -37,13 +37,14 @@ The modules are `SequenceNicolas.Core`, `Recursion`, `Families`, `States`, `Fore
 | `prop:nicolasfamilies` | Families | `nicolas_one`, `nicolas_two_fwd`, `nicolas_two_bwd`, `nicolas_three_fwd`, `nicolas_three_bwd` |
 | `prop:nicolascount` | NicolasCount | `A_lower`, `A_upper`, `A_real`, `P_lower`, `P_upper`, `Q_lower`, `Q_upper`, `PQ_disjoint`, `B_real` |
 | `thm:counting` | CountBase, Counting, CountingA, CountingB, CountingReal | `counting_A`, `counting_B`, `counting_real_A`, `counting_real_B`, `counting_real_asymp_A`, `counting_real_asymp_B` |
-| `prop:Ncount` (1) | Forest | `Ncount` |
+| `prop:Ncount` | Forest | `Ncount`, `Ncount_two` |
 | `prop:symmetry` | States | `succ_symm` |
 | `prop:Npairs` | Forest, Roots | `N_odd_eq`, `four_dvd` |
 | `thm:forest` | Forest, States, Roots | `F_count`, `F_sum`, `phi_iff`, `children_card`, `succ_iff_phi`, `count_children`, `N_identity`, `J_identity`, `initial_fwd` |
 | `prop:roots` | Roots | `phi_repr`, `root_of_repr`, `roots_half` |
 | `thm:bottomup` | States | `bottomup_iff` |
 | `thm:symfamilies` | SymFamilies | `symfam_one`, `symfam_two`, `symfam_three` |
+| Decimal values of `E`, `C₁`, `C₂`, `5/4 + E/2`, `3 + C₁`, `5/4 + E/2 + C₂` (`thm:counting`, `thm:counting2`) | CountBase | `E_dec`, `C1_dec`, `C2_dec`, `constB_dec`, `const2A_dec`, `const2B_dec` |
 | `thm:counting2` | CountingC, CountingD, CountingReal | `counting2_A`, `counting2_B`, `counting2_real_A`, `counting2_real_B`, `counting2_real_asymp_A`, `counting2_real_asymp_B` |
 | `lem:cp` | PrimesBase | `cp_mul`, `cp_pow`, `cp_pow_pred`, `cp_digits` |
 | `prop:Fp` | PrimesFp | `prop_Fp`, `prop_Fp_unique` |
@@ -58,7 +59,7 @@ The modules are `SequenceNicolas.Core`, `Recursion`, `Families`, `States`, `Fore
 
 ## Not formalized in Lean
 
-- Proposition `prop:Ncount` (2).
+- The worked numerical examples of the text (Example `ex:algo`, the instance `c(2^24 + 2^22) = 2^28` after Theorem `thm:members`, the instances for `p = 3` after Theorem `thm:primefamilies`, the coincidence with the table of Nicolas).
 - The computations and tables of Section `sec:experiments`.
 
 No result of the literature is used as a hypothesis: the formalized statements are proved from Mathlib.

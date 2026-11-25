@@ -1,7 +1,7 @@
 version: v0.4
 project:
   name: "SequenceNicolas: powers of a prime in the image of summatory valuation functions"
-  description: "Lean 4 formalization of the paper 'Powers of a Prime in the Image of Summatory Valuation Functions', on the question of Nicolas about the powers of 2 in the image of c(n) = sum_{k=1}^{n} 2^{v_2(k)}. It proves the recurrences and the binary formula for c, the equivalence of Theorem thm:equiv, the greedy lemma, the leading term and the recursion on states with its algorithm, the explicit members and non-members, the one-step classification, the families of Nicolas and their counting, the lower bounds for the counting functions A(x) and B(x) (Theorems thm:counting and thm:counting2), the forest of successful states, the bottom-up recursion and the symmetry, the further families of Theorem thm:symfamilies, and the analogue for an arbitrary prime p (Lemma lem:cp, Proposition prop:Fp, Theorems thm:primes, thm:primestep, thm:primefamilies, thm:immediate, thm:primebottomup and Proposition prop:primezero). Everything is proved from Mathlib. The computations of Section sec:experiments and Proposition prop:Ncount (2) are not formalized."
+  description: "Lean 4 formalization of the paper 'Powers of a Prime in the Image of Summatory Valuation Functions', on the question of Nicolas about the powers of 2 in the image of c(n) = sum_{k=1}^{n} 2^{v_2(k)}. It proves the recurrences and the binary formula for c, the equivalence of Theorem thm:equiv, the greedy lemma, the leading term and the recursion on states with its algorithm, the explicit members and non-members, the one-step classification, the families of Nicolas and their counting, the lower bounds for the counting functions A(x) and B(x) (Theorems thm:counting and thm:counting2), the forest of successful states, the bottom-up recursion and the symmetry, the further families of Theorem thm:symfamilies, and the analogue for an arbitrary prime p (Lemma lem:cp, Proposition prop:Fp, Theorems thm:primes, thm:primestep, thm:primefamilies, thm:immediate, thm:primebottomup and Proposition prop:primezero). Everything is proved from Mathlib. The worked numerical examples of the text and the computations of Section sec:experiments are not formalized."
   authors:
     - name: "Frank Vega"
       orcid: "0000-0001-8210-4126"
@@ -69,7 +69,7 @@ modules:
   - name: SequenceNicolas.Forest
     path: SequenceNicolas/Forest.lean
     status: formalized
-    notes: "Proposition prop:Ncount (1); N(2k+1) = N(2k) of Proposition prop:Npairs; Theorem thm:forest (1), (2) and the counting identities of (3)."
+    notes: "Proposition prop:Ncount (1) and (2); N(2k+1) = N(2k) of Proposition prop:Npairs; Theorem thm:forest (1), (2) and the counting identities of (3)."
   - name: SequenceNicolas.Roots
     path: SequenceNicolas/Roots.lean
     status: formalized
@@ -85,7 +85,7 @@ modules:
   - name: SequenceNicolas.CountBase
     path: SequenceNicolas/CountBase.lean
     status: formalized
-    notes: "The constants E, C1, C2 and the series estimates used in Theorems thm:counting and thm:counting2."
+    notes: "The constants E, C1, C2, the series estimates used in Theorems thm:counting and thm:counting2, and their decimal values."
   - name: SequenceNicolas.Counting
     path: SequenceNicolas/Counting.lean
     status: formalized
@@ -148,5 +148,5 @@ modules:
     notes: "The counting consequence of Theorem thm:primefamilies for a real argument."
 
 unformalized_in_lean:
-  - Proposition prop:Ncount (2)
+  - The worked numerical examples of the text (Example ex:algo, the instance c(2^24 + 2^22) = 2^28, the instances for p = 3, the coincidence with the table of Nicolas)
   - The computations and tables of Section sec:experiments (script experiments/powers_of_two_c.py, output experiments/results_powers_of_two_c.txt)

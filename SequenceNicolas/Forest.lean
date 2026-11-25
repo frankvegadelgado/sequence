@@ -10,7 +10,7 @@ public import SequenceNicolas.States
 /-!
 # The counting identities for `N(J)` and `F(J)`
 
-This module formalizes Proposition `prop:Ncount` (1), the equality `N(2k+1) = N(2k)` of
+This module formalizes Proposition `prop:Ncount` (1) and (2), the equality `N(2k+1) = N(2k)` of
 Proposition `prop:Npairs`, Theorem `thm:forest` (1) (the failing states and their number `F(J)`),
 Theorem `thm:forest` (2) (the number of children of a state) and the two counting identities of
 Theorem `thm:forest` (3).
@@ -519,5 +519,68 @@ theorem J_identity {J : ℕ} (hJ : 1 ≤ J) :
   rw [Finset.card_union_of_disjoint hdisj] at hcard
   unfold FJ
   omega
+
+/-! ### Proposition `prop:Ncount` (2) -/
+
+/-- Proposition `prop:Ncount` (2): for `h ≥ 1`, the number of `a ∈ 𝓐` whose candidate `K` (that is,
+`β(K) = a + 3`) lies in `(2^{h-1}, 2^h]` equals `#{K ∈ (2^{h-1}, 2^h] : 2^h - K ∈ S_{K-1}}`. -/
+theorem Ncount_two {h : ℕ} (hh : 1 ≤ h) :
+    ((Finset.range (2 ^ h + h)).filter (fun a =>
+        Amem a ∧ ∃ K, 2 ^ (h - 1) < K ∧ K ≤ 2 ^ h ∧ beta K = a + 3)).card =
+      ((Finset.Ioc (2 ^ (h - 1)) (2 ^ h)).filter (fun K => 2 ^ h - K ∈ SJ (K - 1))).card := by
+  obtain ⟨g, rfl⟩ : ∃ g, h = g + 1 := ⟨h - 1, by omega⟩
+  rw [Nat.add_sub_cancel]
+  have e : 2 ^ (g + 1) = 2 * 2 ^ g := by ring
+  have hH : 1 ≤ 2 ^ g := Nat.one_le_two_pow
+  have hfH : ∀ K, 2 ^ g < K → K ≤ 2 ^ (g + 1) → 2 ≤ K ∧ hfun K = g + 1 := by
+    intro K h1 h2
+    have h3 : 2 ≤ K := by omega
+    exact ⟨h3, hfun_of_bounds h3 (by omega) (by omega)⟩
+  have hiff : ∀ K, 2 ^ g < K → K ≤ 2 ^ (g + 1) →
+      (Amem (beta K - 3) ↔ 2 ^ (g + 1) - K ∈ SJ (K - 1)) := by
+    intro K h1 h2
+    obtain ⟨hK2, hh1⟩ := hfH K h1 h2
+    obtain ⟨m, rfl⟩ : ∃ m, K = m + 1 := ⟨K - 1, by omega⟩
+    have hb : beta (m + 1) = (beta (m + 1) - 3) + 3 := by
+      unfold beta
+      omega
+    have hls := leading_state (K := m + 1) hK2
+    rw [hh1] at hls
+    rw [amem_iff_state (by omega : 1 ≤ m) hb, hh1]
+    simp only [SJ, Finset.mem_filter, Finset.mem_range, Succ, Nat.add_sub_cancel]
+    constructor
+    · intro hI
+      exact ⟨by omega, hI⟩
+    · exact fun hm => hm.2
+  have himg : (Finset.range (2 ^ (g + 1) + (g + 1))).filter (fun a =>
+        Amem a ∧ ∃ K, 2 ^ g < K ∧ K ≤ 2 ^ (g + 1) ∧ beta K = a + 3) =
+      ((Finset.Ioc (2 ^ g) (2 ^ (g + 1))).filter
+        (fun K => 2 ^ (g + 1) - K ∈ SJ (K - 1))).image (fun K => beta K - 3) := by
+    ext a
+    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_image, Finset.mem_Ioc]
+    constructor
+    · rintro ⟨_, hA, K, hK1, hK2, hb⟩
+      refine ⟨K, ⟨⟨hK1, hK2⟩, ?_⟩, by omega⟩
+      have hae : beta K - 3 = a := by omega
+      rw [← hiff K hK1 hK2, hae]
+      exact hA
+    · rintro ⟨K, ⟨⟨hK1, hK2⟩, hmem⟩, rfl⟩
+      obtain ⟨hK3, hh1⟩ := hfH K hK1 hK2
+      have hbK : beta K = K + (g + 1) := by
+        unfold beta
+        omega
+      refine ⟨by omega, (hiff K hK1 hK2).2 hmem, K, hK1, hK2, by omega⟩
+  have hinj : Set.InjOn (fun K => beta K - 3)
+      ↑((Finset.Ioc (2 ^ g) (2 ^ (g + 1))).filter (fun K => 2 ^ (g + 1) - K ∈ SJ (K - 1))) := by
+    intro K1 h1 K2 h2 heq
+    have a1 := Finset.mem_Ioc.1 (Finset.mem_filter.1 (Finset.mem_coe.1 h1)).1
+    have a2 := Finset.mem_Ioc.1 (Finset.mem_filter.1 (Finset.mem_coe.1 h2)).1
+    obtain ⟨b1, c1⟩ := hfH K1 a1.1 a1.2
+    obtain ⟨b2, c2⟩ := hfH K2 a2.1 a2.2
+    have heq' : beta K1 - 3 = beta K2 - 3 := heq
+    apply beta_inj
+    unfold beta at heq' ⊢
+    omega
+  rw [himg, Finset.card_image_of_injOn hinj]
 
 end SequenceNicolas.Forest

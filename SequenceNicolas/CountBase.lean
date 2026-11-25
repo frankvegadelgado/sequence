@@ -137,4 +137,80 @@ theorem C2_tail (n : ℕ) :
     C2const - ∑ k ∈ Finset.range n, 1 / ((2 : ℝ) ^ (k + 1) + 1) ≤ 2 * (1 / 2 : ℝ) * (1 / 2 : ℝ) ^ n :=
   (tail_le (fun k => 1 / ((2 : ℝ) ^ (k + 1) + 1)) (1 / 2) (by norm_num) f2_nonneg f2_le n).2
 
+theorem C1_summable : Summable (fun k : ℕ => 1 / ((2 : ℝ) ^ k + 2)) :=
+  (tail_le (fun k => 1 / ((2 : ℝ) ^ k + 2)) 1 (by norm_num) f1_nonneg f1_le 0).1
+
+theorem C2_summable : Summable (fun k : ℕ => 1 / ((2 : ℝ) ^ (k + 1) + 1)) :=
+  (tail_le (fun k => 1 / ((2 : ℝ) ^ (k + 1) + 1)) (1 / 2) (by norm_num) f2_nonneg f2_le 0).1
+
+/-! ### The decimal values of the constants -/
+
+theorem E_tight : (1606695152 / 1000000000 : ℝ) < Econst ∧ Econst < 1606695153 / 1000000000 := by
+  have h1 : ∑ i ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (i + 1) - 1) ≤ Econst :=
+    E_summable.sum_le_tsum _ (fun i _ => fE_nonneg i)
+  have h2 := E_tail 40
+  have h3 : (1606695152 / 1000000000 : ℝ) < ∑ i ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (i + 1) - 1) := by
+    norm_num [Finset.sum_range_succ]
+  have h4 : (∑ i ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (i + 1) - 1)) + 2 * 1 * (1 / 2 : ℝ) ^ 40
+      < 1606695153 / 1000000000 := by
+    norm_num [Finset.sum_range_succ]
+  constructor <;> linarith
+
+theorem C1_tight : (965583223 / 1000000000 : ℝ) < C1const ∧ C1const < 965583224 / 1000000000 := by
+  have h1 : ∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ k + 2) ≤ C1const :=
+    C1_summable.sum_le_tsum _ (fun k _ => f1_nonneg k)
+  have h2 := C1_tail 40
+  have h3 : (965583223 / 1000000000 : ℝ) < ∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ k + 2) := by
+    norm_num [Finset.sum_range_succ]
+  have h4 : (∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ k + 2)) + 2 * 1 * (1 / 2 : ℝ) ^ 40
+      < 965583224 / 1000000000 := by
+    norm_num [Finset.sum_range_succ]
+  constructor <;> linarith
+
+theorem C2_tight : (764499780 / 1000000000 : ℝ) < C2const ∧ C2const < 764499781 / 1000000000 := by
+  have h1 : ∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (k + 1) + 1) ≤ C2const :=
+    C2_summable.sum_le_tsum _ (fun k _ => f2_nonneg k)
+  have h2 := C2_tail 40
+  have h3 : (764499780 / 1000000000 : ℝ) < ∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (k + 1) + 1) := by
+    norm_num [Finset.sum_range_succ]
+  have h4 : (∑ k ∈ Finset.range 40, 1 / ((2 : ℝ) ^ (k + 1) + 1)) + 2 * (1 / 2 : ℝ) * (1 / 2 : ℝ) ^ 40
+      < 764499781 / 1000000000 := by
+    norm_num [Finset.sum_range_succ]
+  constructor <;> linarith
+
+/-- `E = 1.6066951…` -/
+theorem E_dec : (16066951 / 10000000 : ℝ) ≤ Econst ∧ Econst < 16066952 / 10000000 := by
+  obtain ⟨h1, h2⟩ := E_tight
+  constructor <;> linarith
+
+/-- `C₁ = 0.9655832…` -/
+theorem C1_dec : (9655832 / 10000000 : ℝ) ≤ C1const ∧ C1const < 9655833 / 10000000 := by
+  obtain ⟨h1, h2⟩ := C1_tight
+  constructor <;> linarith
+
+/-- `C₂ = 0.7644997…` -/
+theorem C2_dec : (7644997 / 10000000 : ℝ) ≤ C2const ∧ C2const < 7644998 / 10000000 := by
+  obtain ⟨h1, h2⟩ := C2_tight
+  constructor <;> linarith
+
+/-- `5/4 + E/2 = 2.0533475…` -/
+theorem constB_dec :
+    (20533475 / 10000000 : ℝ) ≤ 5 / 4 + Econst / 2 ∧ 5 / 4 + Econst / 2 < 20533476 / 10000000 := by
+  obtain ⟨h1, h2⟩ := E_tight
+  constructor <;> linarith
+
+/-- `3 + C₁ = 3.9655832…` -/
+theorem const2A_dec :
+    (39655832 / 10000000 : ℝ) ≤ 3 + C1const ∧ 3 + C1const < 39655833 / 10000000 := by
+  obtain ⟨h1, h2⟩ := C1_tight
+  constructor <;> linarith
+
+/-- `5/4 + E/2 + C₂ = 2.8178473…` -/
+theorem const2B_dec :
+    (28178473 / 10000000 : ℝ) ≤ 5 / 4 + Econst / 2 + C2const ∧
+      5 / 4 + Econst / 2 + C2const < 28178474 / 10000000 := by
+  obtain ⟨h1, h2⟩ := E_tight
+  obtain ⟨h3, h4⟩ := C2_tight
+  constructor <;> linarith
+
 end SequenceNicolas.CountBase
