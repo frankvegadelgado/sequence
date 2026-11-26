@@ -27,7 +27,7 @@ sources:
     authors: ["Frank Vega"]
   - title: "Some open questions"
     type: article
-    relationship: formalizes
+    relationship: background
     authors: ["Jean-Louis Nicolas"]
 
 automation:
